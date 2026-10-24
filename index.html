@@ -1,0 +1,1772 @@
+<!--SKEL-->
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#375795">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="わりかん家計簿">
+<meta name="description" content="ふたりの家計簿と割り勘の清算を、1回の入力でまとめて。">
+<!--/SKEL-->
+<title>わりかん家計簿</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Archivo:wght@500;600;700&display=swap">
+<style>
+/* Layout: one column of stacked cards, phone-first — a ledger you thumb through month by month */
+:root{
+  --bg:#F1F3F7; --surface:#FFFFFF; --surface-2:#F6F8FB;
+  --fg:#171A20; --fg-2:#596273; --fg-3:#767F8E;
+  --line:#E2E7EF; --line-2:#EEF1F6;
+  --accent:#3D5A98; --accent-soft:#E7EDF8; --on-accent:#FFFFFF;
+  --hero:#375795;
+  --pa:#3D5A98; --pa-soft:#E7EDF8; --pa-ink:#3D5A98;
+  --pb:#B06E2E; --pb-soft:#F7E8D4; --pb-ink:#7F4C18;
+  --good:#1F7A54; --good-soft:#D8EFE4;
+  --danger:#AE3B33;
+  --r:20px;
+  --font-ja:"Zen Maru Gothic", system-ui, -apple-system, "Hiragino Maru Gothic ProN", "Noto Sans JP", sans-serif;
+  --font-num:"Archivo", ui-sans-serif, system-ui, sans-serif;
+  --shadow:0 1px 2px rgba(23,26,32,.06), 0 10px 24px -14px rgba(23,26,32,.4);
+  --k0:#8A93A2; --k1:#2a78d6; --k2:#eb6834; --k3:#1baf7a; --k4:#eda100;
+  --k5:#e87ba4; --k6:#008300; --k7:#6250d6; --k8:#e34948;
+  /* the same hues, dimmed only as far as white lettering needs */
+  --s0:#6f7785; --s1:#2a76d3; --s2:#bd5831; --s3:#1b8562; --s4:#9b6e10;
+  --s5:#aa5f7f; --s6:#008300; --s7:#6250d6; --s8:#d14545;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0F1116; --surface:#191C23; --surface-2:#20242D;
+  --fg:#E7EAF0; --fg-2:#A3ACBA; --fg-3:#7A8390;
+  --line:#2A2F3A; --line-2:#232833;
+  --accent:#5E8BD6; --accent-soft:#1E2A3F; --on-accent:#0F1620;
+  --pa:#5E8BD6; --pa-soft:#1E2A3F; --pa-ink:#8FB4EC;
+  --pb:#BE8135; --pb-soft:#2F2619; --pb-ink:#E0A75F;
+  --good:#4FA179; --good-soft:#17291F;
+  --hero:#22304C;
+  --danger:#D4756B;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 8px 22px -14px rgba(0,0,0,.8);
+  --k0:#7A8390; --k1:#3987e5; --k2:#d95926; --k3:#199e70; --k4:#c98500;
+  --k5:#d55181; --k6:#008300; --k7:#9085e9; --k8:#e66767;
+  --s0:#6e7784; --s1:#3477c9; --s2:#c65326; --s3:#198662; --s4:#9f6d0a;
+  --s5:#c24c78; --s6:#008300; --s7:#746dbb; --s8:#bb585a;
+  color-scheme: dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0F1116; --surface:#191C23; --surface-2:#20242D;
+  --fg:#E7EAF0; --fg-2:#A3ACBA; --fg-3:#7A8390;
+  --line:#2A2F3A; --line-2:#232833;
+  --accent:#5E8BD6; --accent-soft:#1E2A3F; --on-accent:#0F1620;
+  --pa:#5E8BD6; --pa-soft:#1E2A3F; --pa-ink:#8FB4EC;
+  --pb:#BE8135; --pb-soft:#2F2619; --pb-ink:#E0A75F;
+  --good:#4FA179; --good-soft:#17291F;
+  --hero:#22304C;
+  --danger:#D4756B;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 8px 22px -14px rgba(0,0,0,.8);
+  --k0:#7A8390; --k1:#3987e5; --k2:#d95926; --k3:#199e70; --k4:#c98500;
+  --k5:#d55181; --k6:#008300; --k7:#9085e9; --k8:#e66767;
+  --s0:#6e7784; --s1:#3477c9; --s2:#c65326; --s3:#198662; --s4:#9f6d0a;
+  --s5:#c24c78; --s6:#008300; --s7:#746dbb; --s8:#bb585a;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-ja);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+/* header */
+.hdr{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);
+  box-shadow:0 3px 12px -8px rgba(23,26,32,.5);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.hdr-in{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:8px;padding-block:9px}
+.mnav{display:flex;align-items:center;gap:2px;flex:1;min-width:0}
+.mbtn{width:34px;height:34px;display:grid;place-items:center;border:0;background:transparent;border-radius:50%;color:var(--fg-2)}
+.mbtn:hover{background:var(--surface-2);color:var(--fg)}
+.mlabel{font-weight:700;font-size:17px;letter-spacing:.01em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.today{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 10px;font-size:12px;color:var(--fg-2)}
+.today:hover{border-color:var(--accent);color:var(--accent)}
+.iconbtn{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);border-radius:50%;color:var(--fg-2)}
+.iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* layout */
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 150px;display:flex;flex-direction:column;gap:11px}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:28;display:flex;background:var(--surface);box-shadow:0 -3px 14px -8px rgba(40,90,130,.5);
+  padding-left:max(6px,env(safe-area-inset-left,0px));padding-right:max(6px,env(safe-area-inset-right,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
+.tb{flex:1;min-width:0;border:0;background:transparent;padding:9px 2px 11px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--fg-2);font-size:10.5px;font-weight:700;white-space:nowrap}
+.tb svg{width:21px;height:21px;display:block}
+.tb:hover{color:var(--fg-2)}
+.tb[aria-pressed="true"]{color:var(--accent)}
+.card{background:var(--surface);border:0;border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.paid{padding:8px 16px 15px;display:flex;flex-direction:column}
+.paidrow{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--line-2);font-size:15.5px}
+.paidrow:last-child{border-bottom:0}
+.paid-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg-2)}
+.paid-v{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:700;font-size:17.5px}
+.footnote{font-size:12.5px;line-height:1.75;color:var(--fg-2);text-align:center;padding:2px 12px}
+.card-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:14px 16px 0}
+.card-a{border:0;background:transparent;padding:0;font-size:13px;font-weight:700;color:var(--accent)}
+.card-a:hover{opacity:.75}
+/* ホームの要約: 合計を大きく、だれがいくら出したかを一本の帯と行で */
+.sumbox{padding:6px 16px 15px;display:flex;flex-direction:column;gap:10px}
+.sum-v{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:700;font-size:31px;line-height:1.15;letter-spacing:-.02em}
+.track.stack{display:flex;gap:2px;height:11px;background:var(--line-2)}
+/* だれがいくら出したか: ひとり1枚のカードを横に並べて */
+.duo{display:flex;gap:11px}
+.pcard{flex:1;min-width:0;display:flex;align-items:center;gap:9px;background:var(--surface);border-radius:17px;box-shadow:var(--shadow);padding:11px 12px}
+.ring{flex:none;width:46px;height:46px;display:block}
+.ring-t{font-family:var(--font-num);font-size:9.5px;font-weight:700;fill:var(--fg-3)}
+.pcard-m{flex:1;min-width:0;display:flex;flex-direction:column}
+.pcard-n{font-size:13.5px;font-weight:700;color:var(--fg-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcard-v{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:700;font-size:15.5px;color:var(--fg);overflow:hidden;text-overflow:ellipsis}
+.pcard-v.neg{color:var(--danger)}
+/* やりくり: 濃紺の下に、使ったぶんを同じカードの中でつなげる */
+.sumfoot{display:flex;align-items:center;gap:12px;padding:12px 16px 14px}
+.sf-m{flex:1;min-width:0;display:flex;flex-direction:column}
+.sf-k{font-size:13.5px;font-weight:700;color:var(--fg-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sf-s{font-size:11.5px;color:var(--fg-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sf-v{flex:none;font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:700;font-size:18px}
+.sf-v.neg{color:var(--danger)}
+.delta{font-size:12.5px;font-weight:700;color:var(--fg-3)}
+.delta.up{color:var(--danger)}
+.delta.down{color:var(--good)}
+.sum-sub{font-size:12.5px;color:var(--fg-3);border-top:1px solid var(--line-2);padding-top:9px}
+.sum-sub b{font-family:var(--font-num);font-weight:700;color:var(--fg-2)}
+/* 最近の記録 */
+.minis{padding:6px 16px 10px}
+.mini{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:transparent;padding:9px 16px;margin:0 -16px;border-bottom:1px solid var(--line-2)}
+.mini:last-child{border-bottom:0}
+.mini:hover,.mini:active{background:var(--surface-2)}
+.mini-m{flex:1;min-width:0;display:flex;flex-direction:column}
+.mini-n{font-size:14.5px;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini-d{font-size:11.5px;color:var(--fg-3);font-family:var(--font-num)}
+.mini-a{flex:none;font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:700;font-size:15.5px}
+.card-t{font-size:13.5px;font-weight:700;letter-spacing:.06em;color:var(--fg-2)}
+.card-n{font-size:13px;color:var(--fg-3)}
+
+/* hero */
+.hero{padding:0;text-align:center;background:var(--surface)}
+/* 清算パネルは濃い色で、文字と猫を白く抜く */
+/* 背景は猫のイラスト。下half は少し落として、白い文字が沈まないように */
+.hero-top{position:relative;overflow:hidden;padding:92px 16px 22px;
+  background:linear-gradient(to bottom, rgba(42,60,104,0) 38%, rgba(40,57,100,.5) 100%), var(--hero) url("hero.jpg") center/cover no-repeat;
+  --fg:#FFFFFF; --fg-2:rgba(255,255,255,.82); --fg-3:rgba(255,255,255,.62);
+  --surface:var(--hero); --line-2:rgba(255,255,255,.22); --danger:#FFAEA2}
+.hero-btn{position:absolute;top:11px;right:11px;z-index:1;border:0;border-radius:999px;padding:7px 13px;font-size:12px;font-weight:700;
+  background:var(--accent);color:var(--on-accent);box-shadow:0 4px 12px -4px rgba(26,70,130,.55);font-size:13px}
+.hero-btn:hover{filter:brightness(1.1)}
+.hero-btn.done{background:var(--good-soft);color:var(--good);box-shadow:none}
+.hero-cat{display:block;width:76px;height:64px;margin:0 auto 4px}
+.hero-k{font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--fg-2)}
+/* やりくりは絵なしで、同じ青の無地・背を低く */
+/* 金額がリングと同じ高さに来るよう、上下の余白を寄せている */
+.hero-top.plain{background:#375795;padding:21px 16px 12px}
+.hero-top.plain .hero-amt{font-size:34px}
+.hero-top.plain .hero-sub{margin-top:5px}
+.hero-top .chip{background:rgba(255,255,255,.93)}
+.hero-top .hero-btn{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.5);color:#FFFFFF;
+  padding:6px 12px;font-size:12px;box-shadow:none;backdrop-filter:blur(2px)}
+.hero-top .hero-btn:hover{filter:none;background:rgba(255,255,255,.3)}
+.hero-top .hero-btn.done{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.4);color:#FFFFFF}
+.namerow{display:flex;align-items:center;gap:11px}
+.namerow .inp{flex:1;min-width:0}
+.hero-flow{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;margin-bottom:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-size:14px;font-weight:700;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip.a{background:var(--pa-soft);color:var(--pa-ink)}
+.chip.b{background:var(--pb-soft);color:var(--pb-ink)}
+.arrow{color:var(--fg-3);font-size:17px}
+.hero-amt{display:block;font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:700;font-size:40px;line-height:1.1;letter-spacing:-.02em;color:var(--fg)}
+/* やりくり: 円グラフを金額の左に */
+.herorow{display:flex;align-items:center;justify-content:center;gap:15px;margin-top:6px}
+.hero-ring{position:absolute;left:16px;top:50%;transform:translateY(-50%);display:block;--line-2:rgba(255,255,255,.26)}
+.hero-ring .ring{width:58px;height:58px}
+.hero-ring .ring-t{fill:#FFFFFF;font-size:9px}
+.hero-m{text-align:left;min-width:0}
+.hero-m .hero-sub{display:block;margin-top:2px}
+.hero-amt.zero{font-size:26px;color:var(--fg-2)}
+.hero-sub{font-size:13.5px;color:var(--fg-2);margin-top:8px}
+.hbar{margin:14px auto 0;max-width:260px;height:8px;border-radius:5px;background:rgba(10,20,45,.38);overflow:hidden}
+.hbar span{display:block;height:100%;border-radius:5px;background:#CFE0FF}
+.hbar.over span{background:var(--danger)}
+.hero-note{margin-top:8px;font-size:12px;color:rgba(255,255,255,.82)}
+.hero-note b{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:700;color:#FFFFFF}
+.hero-act{margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:11px 21px;font-size:15px;font-weight:700}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.pri:hover{filter:brightness(1.08);color:var(--on-accent)}
+.btn.ghost{border-color:transparent;color:var(--fg-3);font-weight:500}
+.btn.ghost:hover{color:var(--danger);border-color:transparent}
+.settled{display:inline-flex;align-items:center;gap:7px;background:var(--good-soft);color:var(--good);border-radius:999px;padding:5px 13px;font-size:13px;font-weight:700}
+
+/* bars */
+.rows{padding:12px 16px 16px;display:flex;flex-direction:column;gap:11px}
+.row{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:baseline}
+.row-l{font-size:13.5px;color:var(--fg-2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-v{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-size:14px;font-weight:600}
+.track{grid-column:1/-1;display:block;height:9px;border-radius:5px;background:var(--line-2);overflow:hidden}
+.fill{display:block;height:100%;border-radius:5px;background:var(--accent);min-width:5px}
+.fill.a{background:var(--pa)} .fill.b{background:var(--pb)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.av{display:block;flex:none;width:28px;height:28px}
+.chip .av{width:20px;height:20px}
+.sub .av,.seg button .av{width:23px;height:23px}
+.paidrow .av,.namerow .av{width:30px;height:30px}
+.empty-cat{display:block;width:94px;height:66px;margin:0 auto 14px}
+.dot.a{background:var(--pa)} .dot.b{background:var(--pb)}
+
+/* stat strip */
+/* the ふたり / 個人 switch: one slim pill so the ledger below gets the room */
+.seg2{display:flex;gap:4px;background:var(--surface);border-radius:999px;padding:4px;box-shadow:var(--shadow)}
+.seg2 button{flex:1;min-width:0;border:0;background:transparent;border-radius:999px;padding:9px 6px;
+  font-size:14px;font-weight:700;color:var(--fg-2);display:flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;overflow:hidden}
+.seg2 button b{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:700;font-size:14.5px}
+.seg2 button:hover{color:var(--fg)}
+.seg2 button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.seg2 button[aria-pressed="true"]:hover{color:var(--on-accent)}
+.stats{display:flex;gap:7px;padding:8px}
+.stat{flex:1;min-width:0;padding:11px 5px 12px;text-align:center;background:var(--surface-2);border:2px solid transparent;border-radius:15px}
+.stat:hover{background:var(--accent-soft)}
+.stat[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.stat[aria-pressed="true"] .stat-k,.stat[aria-pressed="true"] .stat-v{color:var(--accent)}
+.stat-k,.stat-v{display:block}
+.stat-k{font-size:12px;color:var(--fg-2);letter-spacing:.04em}
+.stat-v{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:700;font-size:19px;margin-top:1px}
+.filt-hint{font-size:12px;color:var(--fg-3);text-align:center;padding:0 12px 13px}
+.rowbtn{display:grid;width:100%;text-align:left;border:1px solid transparent;background:transparent;border-radius:10px;padding:7px 9px;margin:0 -9px;opacity:.5}
+.rowbtn.on{opacity:1;background:var(--surface-2);border-color:var(--line)}
+.rowbtn:hover{opacity:1}
+.subtabs{display:flex;gap:9px}
+.sub{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;overflow:hidden;
+  border:1px solid transparent;background:var(--surface);border-radius:17px;padding:10px 8px;font-size:14.5px;color:var(--fg-2);box-shadow:var(--shadow)}
+.sub .num{font-weight:700;color:var(--fg)}
+.sub.a[aria-pressed="true"]{border-color:var(--pa);background:var(--pa-soft);color:var(--pa-ink)}
+.sub.b[aria-pressed="true"]{border-color:var(--pb);background:var(--pb-soft);color:var(--pb-ink)}
+/* donut: part-to-whole for the month, every slice named in the legend beside it */
+.pie{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:12px 16px 15px}
+.donut{width:136px;height:136px;flex:none;margin:0 auto}
+.donut .sl{transition:opacity .15s}
+.donut:hover .sl{opacity:.45}
+.donut .sl:hover{opacity:1}
+.d-k{font-size:9px;fill:var(--fg-2)}
+.d-v{font-weight:700;fill:var(--fg);font-family:var(--font-num)}
+.legend{flex:1;min-width:148px;display:flex;flex-direction:column;gap:8px}
+.lg{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font-size:15px}
+.lgb{width:100%;text-align:left;border:1.5px solid transparent;background:transparent;border-radius:12px;padding:5px 8px;margin:0 -8px;color:inherit}
+.lgb:hover{background:var(--surface-2)}
+.lgb.on{background:var(--accent-soft);border-color:var(--accent)}
+.catbar{--k:var(--k0);display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:13.5px;font-weight:700;color:var(--fg-2);
+  background:color-mix(in srgb, var(--k) 14%, var(--surface));
+  border-top:1px solid color-mix(in srgb, var(--k) 30%, var(--surface));
+  border-bottom:1px solid color-mix(in srgb, var(--k) 30%, var(--surface))}
+.catbar .cat{background:var(--surface)}
+.catbar button{margin-left:auto;flex:none;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 15px;font-size:13px;font-weight:700;color:var(--fg-2)}
+.catbar button:hover{border-color:var(--accent);color:var(--accent)}
+.sw{width:11px;height:11px;border-radius:3px}
+.lg-k{color:var(--fg-2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lg-k i{font-style:normal;color:var(--fg-2);font-size:13px}
+.lg-v{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+
+/* list */
+.day{padding:0 16px}
+.day-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 -16px;padding:5px 16px;line-height:1.5;background:var(--surface-2);font-size:13px;font-weight:700;color:var(--fg-2);letter-spacing:.02em}
+/* a row sits on a track so it can slide left and reveal 削除 */
+.swipe{position:relative;margin:0 -16px;overflow:hidden}
+.swipe:last-child .item{border-bottom:0}
+.swipe-del{position:absolute;top:0;right:0;width:84px;height:100%;border:0;padding:0;background:var(--danger);color:#fff;font-size:14px;font-weight:700;letter-spacing:.04em;display:grid;place-items:center}
+.item{position:relative;display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:var(--surface);padding:11px 16px;border-bottom:1px solid var(--line-2);transition:transform .2s cubic-bezier(.22,.61,.36,1);-webkit-tap-highlight-color:transparent}
+.item:hover,.item:active{background:var(--surface-2)}
+.swipe.open .item{transform:translateX(-84px)}
+.cat{--k:var(--k0);flex:none;font-size:12.5px;font-weight:700;border-radius:999px;padding:3px 11px;color:var(--fg-2);background:var(--surface-2);border:1px solid var(--line-2)}
+.cat{background:color-mix(in srgb, var(--k) 20%, var(--surface));color:color-mix(in srgb, var(--k) 72%, var(--fg));border-color:color-mix(in srgb, var(--k) 46%, var(--surface))}
+.item-m{flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow:hidden}
+.item-n{font-size:15px;color:var(--fg);flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cbadge{--k:var(--k0);flex:none;width:29px;height:29px;border-radius:10px;display:grid;place-items:center;background:var(--surface-2);color:var(--fg-2)}
+.cbadge{background:color-mix(in srgb, var(--k) 18%, var(--surface));color:color-mix(in srgb, var(--k) 72%, var(--fg))}
+.cico{width:16px;height:16px;display:block}
+.item-a{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:700;font-size:16px;flex:none}
+.chev{flex:none;color:var(--fg-3);font-size:20px;line-height:1;opacity:.75}
+.tag{flex:none;font-size:11.5px;border-radius:999px;padding:2px 9px;border:1px solid var(--line);color:var(--fg-2);white-space:nowrap}
+.tag.solo{color:var(--fg-3)}
+.tag.fix{color:var(--accent);border-color:var(--accent-soft);background:var(--accent-soft)}
+.tag.keep{font-size:10.5px;padding:1px 7px;color:var(--fg-3);border-color:var(--line)}
+
+/* やりくり */
+.hero-amt.neg{color:var(--danger)}
+.blist{padding:4px 16px 14px;display:flex;flex-direction:column}
+.brow{position:relative;display:flex;align-items:center;gap:10px;padding:9px 0;font-size:15px}
+.brow + .brow{border-top:1px solid var(--line-2)}
+.brow-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg-2)}
+.brow-v{flex:none;font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:700;font-size:16px}
+.brow-s{display:block;font-style:normal;font-size:11px;color:var(--fg-3);font-family:var(--font-num)}
+.brow.ind .brow-n{padding-left:14px;font-size:14px;color:var(--fg-3)}
+.brow.ind .brow-n::before{content:"";position:absolute;left:3px;top:50%;margin-top:-2.5px;width:5px;height:5px;border-radius:50%;background:var(--line)}
+.brow.ind .brow-v{font-size:15px;color:var(--fg-2)}
+.brow.tot,.brow + .brow.tot{border-top:1.5px solid var(--line);margin-top:4px;padding-top:12px}
+.brow.tot .brow-n{color:var(--fg);font-weight:700}
+.brow.tot .brow-v{font-size:19px}
+.brow.hi{padding-bottom:4px}
+.brow.hi .brow-v{font-size:23px;color:var(--accent)}
+.brow.hi .brow-v.minus{color:var(--danger)}
+.bbar{padding:0 16px 16px;display:block}
+.bbar .track{height:11px}
+.bbar .fill.over{background:var(--danger)}
+.bbar-k{display:flex;justify-content:space-between;font-size:12px;color:var(--fg-3);padding-top:7px}
+.bnote{margin:0;padding:0 16px 15px;font-size:12.5px;line-height:1.7;color:var(--fg-3)}
+.bitems{display:flex;flex-direction:column;gap:7px}
+.birow{display:flex;align-items:center;gap:7px}
+.bname{flex:1.25;min-width:0}
+.bamt{flex:1;min-width:0;text-align:right;font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:700}
+.bdel{flex:none;width:30px;height:30px;border:0;background:transparent;color:var(--fg-3);border-radius:50%;font-size:13px}
+.bdel:hover{background:var(--surface-2);color:var(--danger)}
+.btn.addrow{width:100%;margin-top:9px;border-style:dashed;border-color:var(--accent);color:var(--accent);background:transparent;padding:10px}
+
+/* 年間のまとめ */
+.ytop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:-2px}
+.seg2.mini2{flex:1;max-width:238px;background:var(--surface);padding:3px}
+.seg2.mini2 button{flex:1;padding:8px 10px;font-size:13.5px}
+.ytitle{font-size:14px;font-weight:700;color:var(--fg-2);letter-spacing:.04em}
+.ynav{display:flex;align-items:center;gap:2px}
+.ylabel{font-weight:700;font-size:16px;min-width:66px;text-align:center}
+.bigbtn{display:block;width:100%;text-align:center;border:0;padding:15px;font-size:14.5px;font-weight:700;color:var(--accent)}
+.bigbtn:hover{background:var(--surface-2)}
+.avgline{display:flex;align-items:baseline;gap:8px;font-size:13.5px;color:var(--fg-2);margin-top:-4px}
+.avgline b{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-size:16px;color:var(--fg)}
+.avgline span{font-size:11.5px;color:var(--fg-3)}
+.ybars{display:flex;align-items:flex-end;gap:4px;height:62px;margin-top:2px}
+.yb{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%;border:0;background:transparent;padding:0}
+.yb-f{display:block;width:100%;border-radius:4px 4px 2px 2px;background:var(--accent);min-height:2px}
+.yb.off .yb-f{background:var(--line-2)}
+.yb-k{font-family:var(--font-num);font-size:10px;color:var(--fg-3);line-height:1}
+.yb:hover .yb-f{filter:brightness(1.15)}
+.row-s{grid-column:1/-1;font-size:11.5px;color:var(--fg-3);font-family:var(--font-num)}
+/* タップできるようにしても、行の間隔は前と同じに見えるよう余白を相殺する */
+.row.rowb{width:100%;text-align:left;border:1.5px solid transparent;background:transparent;border-radius:13px;padding:5px 9px;margin:-5px -9px}
+.row.rowb:hover{background:var(--surface-2)}
+.row.rowb[aria-pressed="true"]{background:var(--surface-2);border-color:var(--line)}
+.row-l{display:flex;align-items:center;gap:7px}
+.cbadge.sm{width:22px;height:22px;border-radius:7px}
+.cbadge.sm .cico{width:13px;height:13px}
+
+/* 最初の1回だけ出る、あいことばの画面 */
+body.gated{overflow:hidden}
+body.gated .hdr,body.gated .tabbar,body.gated .fab,body.gated #main{display:none}
+#gate{position:fixed;inset:0;z-index:60;background:var(--bg);overflow-y:auto;display:flex;align-items:center;justify-content:center;
+  padding:24px max(18px,env(safe-area-inset-left,0px)) calc(24px + env(safe-area-inset-bottom,0px))}
+.gate{width:100%;max-width:360px;text-align:center;background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:26px 20px 22px}
+.gate-t{margin:4px 0 0;font-size:20px;font-weight:700;letter-spacing:.02em}
+.gate-s{margin:9px 0 16px;font-size:13.5px;line-height:1.8;color:var(--fg-2)}
+.gate-s b{color:var(--accent)}
+.gate-e{margin:-8px 0 12px;font-size:12.5px;font-weight:700;color:var(--danger)}
+.gate .inp{text-align:center;font-family:var(--font-num);font-size:17px;letter-spacing:.04em}
+.gate .btn{width:100%;margin-top:11px;padding:13px}
+.gate-h{margin:15px 0 0;font-size:11.5px;line-height:1.8;color:var(--fg-3)}
+.gate-h b{color:var(--fg-2)}
+.roombox{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:15px;padding:11px 13px}
+.roombox .num{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:15px;font-weight:700}
+
+/* empty + notice */
+.empty{padding:34px 20px;text-align:center;color:var(--fg-3)}
+.empty-t{font-weight:700;color:var(--fg-2);font-size:16px;margin-bottom:6px}
+.empty-s{font-size:14px;line-height:1.75}
+.notice{display:flex;align-items:center;gap:10px;background:var(--accent-soft);border:1px solid transparent;border-radius:var(--r);padding:11px 15px;font-size:13.5px;color:var(--accent)}
+.notice b{font-weight:700}
+.notice button{margin-left:auto;flex:none;border:1px solid currentColor;background:transparent;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700}
+.skel{height:7px;border-radius:4px;background:var(--line-2);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+/* fab */
+.fab{position:fixed;z-index:25;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(74px + env(safe-area-inset-bottom,0px));
+  width:60px;height:60px;border-radius:50%;border:0;background:var(--accent);color:var(--on-accent);font-size:28px;line-height:1;
+  box-shadow:0 7px 20px -6px rgba(61,90,152,.6);display:grid;place-items:center}
+.fab:hover{filter:brightness(1.08)}
+
+/* sheet */
+.scrim{position:fixed;inset:0;z-index:40;background:rgba(10,12,16,.45);display:flex;align-items:flex-end;justify-content:center;overflow-y:auto;overflow-x:hidden}
+@media (min-width:600px){.scrim{align-items:center;padding:24px 0}}
+.sheet{background:var(--surface);width:100%;max-width:560px;border-radius:28px 28px 0 0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 calc(20px + env(safe-area-inset-bottom,0px));max-height:94vh;overflow-y:auto;overflow-x:hidden}
+.sheet *{max-width:100%}
+.fields,.f,.seg,.cats,.sheet-f,.namerow,.newcat-row,.fixlist,.fixrow,.ratio{min-width:0}
+@media (min-width:600px){.sheet{border-radius:24px;padding-block:0 20px}}
+.sheet-h{position:sticky;top:0;background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:10px;padding-block:13px 10px;border-bottom:1px solid var(--line-2);z-index:1}
+.sheet-t{font-weight:700;font-size:16px}
+.fields{display:flex;flex-direction:column;gap:12px;padding-block:13px}
+.f{display:flex;flex-direction:column;gap:5px}
+.row2{display:flex;gap:10px;align-items:flex-end}
+.row2 .f{flex:1;min-width:0}
+.row2 .f:first-child{flex:1.15}
+.f-l{font-size:12.5px;font-weight:700;letter-spacing:.05em;color:var(--fg-2)}
+.inp{width:100%;min-width:0;max-width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:15px;padding:11px 14px;font-size:16px}
+.inp[type="date"]{-webkit-appearance:none;appearance:none;text-align:center}
+.inp:focus{outline:none;border-color:var(--accent);background:var(--surface)}
+.inp.amt{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-size:23px;font-weight:700;text-align:right;padding:9px 13px}
+/* 金額と日付はとなり同士なので、箱の高さをそろえる */
+.row2 .inp{height:52px;padding-top:0;padding-bottom:0;line-height:normal}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:7px;border:1.5px solid var(--line);background:var(--surface-2);border-radius:15px;padding:12px 8px;font-size:15px;font-weight:700;color:var(--fg-2);overflow:hidden;white-space:nowrap}
+.seg button .nm{overflow:hidden;text-overflow:ellipsis}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+/* 割り勘まわりだけはひとまとめ：上は切り替えスイッチ、下はその中身。
+   同じ形のボタンが三段つづくと、どれが何の質問か分からなくなるため */
+.splitbox{background:var(--surface-2);border:1px solid var(--line-2);border-radius:17px;padding:9px;display:flex;flex-direction:column;gap:9px}
+.swt{display:flex;gap:3px;background:var(--line-2);border-radius:999px;padding:3px}
+.swt button{flex:1;min-width:0;border:0;background:transparent;border-radius:999px;padding:9px 6px;font-size:14.5px;font-weight:700;color:var(--fg-2);white-space:nowrap;overflow:hidden}
+.swt button[aria-pressed="true"]{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(23,26,32,.2)}
+.bearwrap{display:flex;flex-direction:column;gap:5px;padding:1px 2px 2px}
+.bear{display:flex;align-items:center;gap:6px}
+.bear-l{font-size:12px;font-weight:700;color:var(--fg-2);letter-spacing:.04em;padding-left:3px}
+/* 入れた内容を一文で読み返せるように（「りゅが◯◯円はらって、ふたりで半分ずつ」） */
+.say{background:var(--accent-soft);border-radius:15px;padding:11px 14px;font-size:14.5px;line-height:1.75;color:var(--fg-2)}
+.say b{font-weight:700;color:var(--accent)}
+.say .m{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:700;font-size:16.5px;color:var(--accent)}
+.say .m.off{color:var(--fg-3)}
+.bchip{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:5px;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:7px 5px;font-size:13.5px;color:var(--fg-2);overflow:hidden;white-space:nowrap}
+.bchip .nm{overflow:hidden;text-overflow:ellipsis}
+.bchip .av{width:20px;height:20px}
+.bchip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700}
+.bear-n{margin:0;padding:0 4px 3px;font-size:12.5px;color:var(--fg-3)}
+/* the category picker keeps the panel the same height, so nothing jumps under your thumb */
+/* カテゴリーはその場で開く。別画面に飛ばないので、入力の途中で迷子にならない */
+.catpanel{margin-top:8px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:15px;padding:10px}
+.catpanel .cats button{background:color-mix(in srgb, var(--k) 16%, var(--surface));border-color:color-mix(in srgb, var(--k) 16%, var(--surface))}
+.nm-a{font-weight:700}
+.cats{display:flex;flex-wrap:wrap;gap:6px}
+.cats button{--k:var(--k0);--ks:var(--accent);border:2px solid var(--line);background:var(--surface-2);border-radius:999px;padding:8px 12px;font-size:14px;color:var(--fg-2);max-width:100%}
+.cats button{background:color-mix(in srgb, var(--k) 16%, var(--surface));border-color:color-mix(in srgb, var(--k) 16%, var(--surface));color:color-mix(in srgb, var(--k) 70%, var(--fg))}
+.cats button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:700}
+.cats button[aria-pressed="true"]{background:color-mix(in srgb, var(--k) 88%, #fff);border-color:transparent;color:#fff}
+.cats .addcat{border-style:dashed;border-color:var(--accent);background:var(--surface-2);color:var(--accent);font-weight:700;box-shadow:none}
+.catrow{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:var(--surface-2);border:1px solid var(--line);border-radius:15px;padding:8px 12px;font-size:16px;color:var(--fg)}
+.catrow:hover{border-color:var(--accent)}
+.catrow .chev{transition:transform .16s}
+.catrow.open{border-color:var(--accent);background:var(--surface)}
+.catrow.open .chev{transform:rotate(90deg);color:var(--accent);opacity:1}
+.catrow-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dayrow{display:flex;align-items:center;gap:10px;font-size:14.5px;color:var(--fg-2);white-space:nowrap}
+.dayrow .inp{flex:0 0 84px;text-align:center}
+.newcat-row{display:flex;gap:8px;margin-top:8px}
+.newcat-row .inp{flex:1;min-width:0}
+.newcat-row .btn{flex:none}
+.catpill{--k:var(--k0);display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:6px 10px 6px 13px;font-size:14px;color:var(--fg-2)}
+.catpill{background:color-mix(in srgb, var(--k) 18%, var(--surface));border-color:color-mix(in srgb, var(--k) 44%, var(--surface));color:color-mix(in srgb, var(--k) 70%, var(--fg))}
+.catpill.custom{font-weight:700;border-color:var(--k)}
+.catpill button{border:0;background:transparent;color:inherit;font-size:11px;padding:0 3px;line-height:1;opacity:.65;border-radius:50%}
+.catpill button:hover{opacity:1}
+.sheet-f{display:flex;gap:9px;padding-block:5px 0}
+.sheet-f .btn{flex:1;padding:13px}
+.hint{font-size:12.5px;color:var(--fg-2);line-height:1.7}
+.fixlist{display:flex;flex-direction:column;gap:8px}
+.fixrow{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:15px;padding:10px 13px}
+.fixrow .item-m{min-width:0}
+.ratio{display:flex;align-items:center;gap:12px}
+.ratio input[type=range]{flex:1;accent-color:var(--accent)}
+.ratio-v{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:700;font-size:14px;white-space:nowrap}
+hr.sep{border:0;border-top:1px solid var(--line-2);margin:4px 0}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+<!--SKEL-->
+</head>
+<body>
+<!--/SKEL-->
+
+<header class="hdr">
+  <div class="hdr-in">
+    <nav class="mnav">
+      <button class="mbtn" data-act="prev" aria-label="前の月">‹</button>
+      <span class="mlabel num" id="mlabel">　</span>
+      <button class="mbtn" data-act="next" aria-label="次の月">›</button>
+    </nav>
+    <button class="today" data-act="today">今月</button>
+    <button class="iconbtn" data-act="settings" aria-label="設定">⚙</button>
+  </div>
+</header>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="wob" x="-12%" y="-12%" width="124%" height="124%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.038" numOctaves="2" seed="5" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="1.9" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</defs></svg>
+
+<main class="wrap" id="main">
+  <section class="card hero">
+    <div class="hero-top">
+      <div class="hero-k">今月の清算</div>
+      <div class="skel" style="width:58%;margin:14px auto 2px;height:30px"></div>
+    </div>
+  </section>
+</main>
+
+<button class="fab" data-act="add" aria-label="支出を追加">＋</button>
+
+<nav class="tabbar">
+  <button class="tb" data-act="view" data-v="home" aria-pressed="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9.8V20h13V9.8"/><path d="M9.8 20v-5h4.4v5"/></svg>
+    <span>ホーム</span>
+  </button>
+  <button class="tb" data-act="view" data-v="detail" aria-pressed="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><path d="M12 3.8A8.2 8.2 0 0 1 20.2 12H12z" fill="currentColor" stroke="none"/></svg>
+    <span>明細</span>
+  </button>
+  <button class="tb" data-act="view" data-v="year" aria-pressed="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4"/><path d="M4 20h16"/><rect x="7.4" y="12.6" width="3.2" height="5"/><rect x="13" y="8.4" width="3.2" height="9.2"/><rect x="18.4" y="10.4" width="3.2" height="7.2"/></svg>
+    <span>年間</span>
+  </button>
+  <button class="tb" data-act="view" data-v="budget" aria-pressed="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="6.2" width="17.6" height="13" rx="3.4"/><path d="M15.4 11.3h5.4v4.1h-5.4a2.05 2.05 0 0 1 0-4.1z"/><path d="M3.6 9.1c.3-1.7 1.3-2.6 3-2.8l8.8-1.1"/></svg>
+    <span>やりくり</span>
+  </button>
+  <button class="tb" data-act="settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.4"/><path d="M12 2.6v2.8M12 18.6v2.8M2.6 12h2.8M18.6 12h2.8M5.3 5.3l2 2M16.7 16.7l2 2M18.7 5.3l-2 2M7.3 16.7l-2 2"/></svg>
+    <span>設定</span>
+  </button>
+</nav>
+<div id="modal" hidden></div>
+<div id="gate" hidden></div>
+
+<script>
+/* Firebase の設定（公開前提の識別子。守りは Firestore のルール側） */
+window.FB_CONFIG = {
+  apiKey: "AIzaSyBozBAjsIVLUZ0Z3w7XMPfpARTParQUJZE",
+  authDomain: "warikan-kakeibo-eb20c.firebaseapp.com",
+  projectId: "warikan-kakeibo-eb20c",
+  storageBucket: "warikan-kakeibo-eb20c.firebasestorage.app",
+  messagingSenderId: "763122123031",
+  appId: "1:763122123031:web:b7e679ef95ea22486ff752"
+};
+</script>
+
+<script>
+(function(){
+"use strict";
+
+const CATS = ["食費","日用品","住居","水道光熱","通信","交通","医療","美容・衣類","娯楽","交際費","その他"];
+const DEFAULTS = { nameA:"わたし", nameB:"パートナー", ratioA:50, defaultSolo:"a" };
+
+/* every category keeps one colour, so a badge and its slice of the donut always match.
+   Eight hues are all that stay apart for colour-blind readers, so the last few share. */
+const CAT_SLOT = { "食費":8, "日用品":3, "住居":1, "水道光熱":4, "通信":7,
+                   "交通":6, "医療":5, "美容・衣類":2, "娯楽":5, "交際費":2, "その他":0 };
+function catSlot(name){
+  const n = String(name || "その他");
+  if (Object.prototype.hasOwnProperty.call(CAT_SLOT, n)) return CAT_SLOT[n];
+  let h = 0; for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) % 9973;
+  return (h % 8) + 1;
+}
+function catVar(name){ return "var(--k" + catSlot(name) + ")"; }
+function catSel(name){ return "var(--s" + catSlot(name) + ")"; }
+
+/* one small drawing per category, so a glance at the ledger says what the money went on */
+const CAT_ICON = {
+  "食費":       '<path d="M6.5 3v5.2a2 2 0 0 0 4 0V3M8.5 8.2V21"/><path d="M16.8 3c-1.5 2-2.1 4.1-2.1 6.1h4.2c0-2-.6-4.1-2.1-6.1z"/><path d="M16.8 9.1V21"/>',
+  "日用品":     '<path d="M5.8 8h12.4l-1 12.2H6.8L5.8 8z"/><path d="M9.2 8V6.1a2.8 2.8 0 0 1 5.6 0V8"/>',
+  "住居":       '<path d="M3.4 11.2 12 4l8.6 7.2"/><path d="M5.6 10.2V20h12.8v-9.8"/><path d="M9.9 20v-5.1h4.2V20"/>',
+  "水道光熱":   '<path d="M12 3.4c3.2 4 5.4 6.6 5.4 9.3a5.4 5.4 0 1 1-10.8 0c0-2.7 2.2-5.3 5.4-9.3z"/>',
+  "通信":       '<path d="M3.6 9.2a13 13 0 0 1 16.8 0"/><path d="M6.6 12.6a8.4 8.4 0 0 1 10.8 0"/><path d="M9.6 16a4.2 4.2 0 0 1 4.8 0"/><circle cx="12" cy="19.4" r="1.2" fill="currentColor" stroke="none"/>',
+  "交通":       '<rect x="5" y="4" width="14" height="12" rx="3"/><path d="M5.4 11.2h13.2M8.6 19.8 6.6 21.6M15.4 19.8l2 1.8M9 16v3.4M15 16v3.4"/><circle cx="9.1" cy="13.4" r="1" fill="currentColor" stroke="none"/><circle cx="14.9" cy="13.4" r="1" fill="currentColor" stroke="none"/>',
+  "医療":       '<rect x="3.4" y="6.4" width="17.2" height="12.4" rx="3.2"/><path d="M12 9.8v5.6M9.2 12.6h5.6"/>',
+  "美容・衣類": '<path d="M12 20.2S4.8 15.6 4.8 10.6A4.1 4.1 0 0 1 12 7.9a4.1 4.1 0 0 1 7.2 2.7c0 5-7.2 9.6-7.2 9.6z"/>',
+  "娯楽":       '<path d="M9.4 17.6V5.8l9.4-1.9v11.8"/><circle cx="6.9" cy="17.8" r="2.5"/><circle cx="16.3" cy="15.9" r="2.5"/>',
+  "交際費":     '<path d="M6.2 4.2h9.6v5.6a4.8 4.8 0 0 1-9.6 0V4.2z"/><path d="M15.8 5.6h2.4a2.1 2.1 0 0 1 0 4.2h-2.4"/><path d="M8.4 20.4h7.2M11 15v5.4"/>',
+  "その他":     '<circle cx="6.2" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="17.8" cy="12" r="1.7" fill="currentColor" stroke="none"/>',
+  "__":         '<path d="M4.2 12.6 12.2 4.6h7.2v7.2l-8 8z"/><circle cx="15.9" cy="8.3" r="1.1" fill="currentColor" stroke="none"/>'
+};
+function catIcon(name){
+  const d = CAT_ICON[String(name || "その他")] || CAT_ICON.__;
+  return '<svg class="cico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"'
+       + ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+}
+
+/* ---------- utilities ---------- */
+const pad = n => String(n).padStart(2,"0");
+const ymOf = d => d.getFullYear()+"-"+pad(d.getMonth()+1);
+const THIS_MONTH = ymOf(new Date());
+const todayISO = () => { const d=new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); };
+function ymAdd(ym,n){ const p=ym.split("-").map(Number); const d=new Date(p[0],p[1]-1+n,1); return ymOf(d); }
+function ymLabel(ym){ const p=ym.split("-").map(Number); return p[0]+"年"+p[1]+"月"; }
+function daysInMonth(ym){ const p=ym.split("-").map(Number); return new Date(p[0],p[1],0).getDate(); }
+function dayLabel(iso){
+  const p=iso.split("-").map(Number); const d=new Date(p[0],p[1]-1,p[2]);
+  return p[1]+"/"+p[2]+"（"+"日月火水木金土"[d.getDay()]+"）";
+}
+const yen = n => "¥" + Math.round(n).toLocaleString("ja-JP");
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sum = a => a.reduce((t,e)=>t+(Number(e.amount)||0),0);
+const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+/* ---------- state ---------- */
+const state = {
+  month: THIS_MONTH,
+  expenses: [], recurring: [], settlements: {}, budgets: {}, prevShared: null, settings: Object.assign({},DEFAULTS),
+  ready:false, mode:"local", readOnly:false, modal:null, filter:"shared", me:null, soloWho:null, view:"home", cat:null,
+  year:null, yearExp:null, yearLoading:false, yearCat:null, room:null
+};
+/* which of the two is using THIS device — a per-device convenience, never shared */
+try{ state.me = localStorage.getItem("wk_me") || null; }catch(e){}
+
+/* each of the two gets a cat: the face carries who, drawn in that person's colour */
+function cat(k){
+  const b = k === "b";
+  const c = b ? "var(--pb)" : "var(--pa)", f = b ? "var(--pb-soft)" : "var(--pa-soft)";
+  return '<svg class="av" viewBox="0 0 34 34" aria-hidden="true">'
+    + '<path d="M8 14 L7 5.5 L14.5 10 Z" fill="'+f+'" stroke="'+c+'" stroke-width="2" stroke-linejoin="round"/>'
+    + '<path d="M26 14 L27 5.5 L19.5 10 Z" fill="'+f+'" stroke="'+c+'" stroke-width="2" stroke-linejoin="round"/>'
+    + '<circle cx="17" cy="20" r="10" fill="'+f+'" stroke="'+c+'" stroke-width="2"/>'
+    + (b ? '<path d="M13.5 13 q3.5 -2.4 7 0" fill="none" stroke="'+c+'" stroke-width="1.8" stroke-linecap="round"/>' : '')
+    + '<circle cx="13.3" cy="19" r="1.6" fill="'+c+'"/><circle cx="20.7" cy="19" r="1.6" fill="'+c+'"/>'
+    + '<path d="M15.6 23.2 q1.4 1.5 2.8 0" fill="none" stroke="'+c+'" stroke-width="1.6" stroke-linecap="round"/>'
+    + '<path d="M1.5 18.5 h5 M1.5 22.5 h5 M27.5 18.5 h5 M27.5 22.5 h5" stroke="'+c+'" stroke-width="1.4" stroke-linecap="round" opacity=".55"/>'
+    + '</svg>';
+}
+/* a cat loafing on an empty month */
+/* the cat that sits on the settlement panel */
+function sittingCat(){
+  const c = "var(--fg)", f = "var(--surface)";
+  return '<svg class="hero-cat" viewBox="0 0 64 54" aria-hidden="true">'
+    + '<path d="M44 48 q14 1 11 -11" fill="none" stroke="'+c+'" stroke-width="2.6" stroke-linecap="round"/>'
+    + '<path d="M18 18 L16 4.5 L28 11.5 Z" fill="'+f+'" stroke="'+c+'" stroke-width="2.6" stroke-linejoin="round"/>'
+    + '<path d="M42 18 L44 4.5 L32 11.5 Z" fill="'+f+'" stroke="'+c+'" stroke-width="2.6" stroke-linejoin="round"/>'
+    + '<path d="M17 48 Q17 29 30 29 Q43 29 43 48 Z" fill="'+f+'" stroke="'+c+'" stroke-width="2.6" stroke-linejoin="round"/>'
+    + '<circle cx="30" cy="21" r="13" fill="'+f+'" stroke="'+c+'" stroke-width="2.6"/>'
+    + '<path d="M23 19 q2.6 3.2 5.2 0 M31.8 19 q2.6 3.2 5.2 0" fill="none" stroke="'+c+'" stroke-width="2.2" stroke-linecap="round"/>'
+    + '<path d="M27.8 25 L32.2 25 L30 27.8 Z" fill="'+c+'"/>'
+    + '<path d="M7 20 h9 M7 25 h9 M44 20 h9 M44 25 h9" stroke="'+c+'" stroke-width="2" stroke-linecap="round" opacity=".45"/>'
+    + '</svg>';
+}
+/* the soft cloud edge where the sky panel meets the card */
+function heroWave(){
+  return '<svg class="hero-wave" viewBox="0 0 120 14" preserveAspectRatio="none" aria-hidden="true">'
+    + '<path d="M0 14 V9 Q5 1 10 9 Q15 1 20 9 Q25 1 30 9 Q35 1 40 9 Q45 1 50 9 Q55 1 60 9'
+    + ' Q65 1 70 9 Q75 1 80 9 Q85 1 90 9 Q95 1 100 9 Q105 1 110 9 Q115 1 120 9 V14 Z" fill="var(--surface)"/>'
+    + '</svg>';
+}
+function sleepingCat(){
+  const c = "var(--fg-3)", f = "var(--surface-2)";
+  return '<svg class="empty-cat" viewBox="0 0 80 56" aria-hidden="true">'
+    + '<path d="M62 48 q13 -2 11 -13" fill="none" stroke="'+c+'" stroke-width="3" stroke-linecap="round"/>'
+    + '<path d="M22 24 L20 10 L33 18 Z" fill="'+f+'" stroke="'+c+'" stroke-width="3" stroke-linejoin="round"/>'
+    + '<path d="M54 24 L56 10 L43 18 Z" fill="'+f+'" stroke="'+c+'" stroke-width="3" stroke-linejoin="round"/>'
+    + '<path d="M10 48 Q10 17 38 17 Q66 17 66 48 Z" fill="'+f+'" stroke="'+c+'" stroke-width="3" stroke-linejoin="round"/>'
+    + '<path d="M25 33 q4.5 4.5 9 0 M44 33 q4.5 4.5 9 0" fill="none" stroke="'+c+'" stroke-width="2.6" stroke-linecap="round"/>'
+    + '<path d="M35.5 39 L42.5 39 L39 42.5 Z" fill="'+c+'"/>'
+    + '<path d="M4 34 h10 M4 39.5 h10 M62 34 h10 M62 39.5 h10" stroke="'+c+'" stroke-width="2" stroke-linecap="round" opacity=".5"/>'
+    + '</svg>';
+}
+
+/* 出した割合を小さなリングで。中にパーセント */
+function ring(k, p, col){
+  col = col || (k === "b" ? "var(--pb)" : "var(--pa)");
+  const C = 2 * Math.PI * 16.4, len = Math.max(C * (Number(p)||0) / 100, 0);
+  return '<svg class="ring" viewBox="0 0 40 40" aria-hidden="true">'
+    + '<circle cx="20" cy="20" r="16.4" fill="none" stroke="var(--line-2)" stroke-width="3.6"/>'
+    + '<g transform="rotate(-90 20 20)"><circle cx="20" cy="20" r="16.4" fill="none" stroke="'+col+'" stroke-width="3.6"'
+    + ' stroke-linecap="round" stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'"/></g>'
+    + '<text x="20" y="23.2" text-anchor="middle" class="ring-t">'+(Number(p)||0)+'%</text></svg>';
+}
+
+/* a donut, drawn by hand: one arc per slice, 2px of surface between them */
+function donut(parts, total){
+  const C = 2 * Math.PI * 45;
+  let acc = 0;
+  const segs = parts.map(function(p, i){
+    const len = total ? p.v / total * C : 0;
+    const dash = Math.max(len - 2, 0.8);
+    const s = '<circle class="sl" cx="60" cy="60" r="45" fill="none" stroke="'+p.c+'" stroke-width="17"'
+            + ' stroke-dasharray="'+dash.toFixed(2)+' '+(C - dash).toFixed(2)+'"'
+            + ' stroke-dashoffset="'+(-acc).toFixed(2)+'"><title>'+esc(p.k)+' '+yen(p.v)+'</title></circle>';
+    acc += len; return s;
+  }).join("");
+  const label = yen(total);
+  const fs = label.length > 9 ? 10.5 : (label.length > 7 ? 12.5 : 14.5);
+  return '<svg viewBox="0 0 120 120" class="donut" role="img" aria-label="カテゴリー別の内訳">'
+       + '<circle cx="60" cy="60" r="45" fill="none" stroke="var(--line-2)" stroke-width="17"></circle>'
+       + '<g transform="rotate(-90 60 60)">' + segs + '</g>'
+       + '<text class="d-k" x="60" y="56" text-anchor="middle">合計</text>'
+       + '<text class="d-v" x="60" y="70" text-anchor="middle" style="font-size:'+fs+'px">'+esc(label)+'</text>'
+       + '</svg>';
+}
+
+/* ---------- categories: the built-in list plus whatever the user adds ---------- */
+function allCats(){
+  const extra = (state.settings.cats || []).filter(function(c){ return c && CATS.indexOf(c) < 0; });
+  return CATS.concat(extra);
+}
+function settingsBody(){
+  const s = state.settings;
+  return { nameA: s.nameA || DEFAULTS.nameA, nameB: s.nameB || DEFAULTS.nameB,
+           ratioA: Number(s.ratioA) || 50, cats: (s.cats || []).filter(Boolean), named: s.named === true,
+           defaultSolo: s.defaultSolo === "b" ? "b" : "a" };
+}
+/* who the personal tab opens on: this device's own choice, else the one saved in the app */
+function meNow(){ return state.me || state.settings.defaultSolo || "a"; }
+function readSettingsForm(){
+  const a = $("#s-a"), b = $("#s-b"), r = $("#s-ratio");
+  const s = Object.assign({}, state.settings);
+  if (a) s.nameA = a.value.trim() || DEFAULTS.nameA;
+  if (b) s.nameB = b.value.trim() || DEFAULTS.nameB;
+  if (r) s.ratioA = Number(r.value);
+  if (a || b) s.named = true;
+  state.settings = s;
+}
+function addCategory(name){
+  const cats = (state.settings.cats || []).slice(); cats.push(name);
+  state.settings = Object.assign({}, state.settings, { cats: cats });
+  guard(putSettings(settingsBody()));
+}
+function removeCategory(name){
+  const cats = (state.settings.cats || []).filter(function(c){ return c !== name; });
+  state.settings = Object.assign({}, state.settings, { cats: cats });
+  guard(putSettings(settingsBody()));
+}
+
+/* ---------- the one calculation everything hangs off ---------- */
+function calc(expenses, ratioA){
+  const shared = expenses.filter(e => e.shared !== false);
+  const solo   = expenses.filter(e => e.shared === false);
+  const sharedTotal = sum(shared);
+  const paidA = sum(shared.filter(e => e.payer === "a"));
+  const paidB = sharedTotal - paidA;
+  /* normally split by the ratio; an entry with a bearer is carried by that person alone */
+  const dueA = shared.reduce(function(t, e){
+    const amt = Number(e.amount) || 0;
+    if (e.bearer === "a") return t + amt;
+    if (e.bearer === "b") return t;
+    return t + amt * (Number(ratioA) || 50) / 100;
+  }, 0);
+  const diff  = Math.round(paidA - dueA);          // >0: B owes A
+  return {
+    total: sum(expenses), sharedTotal, paidA, paidB, diff, dueA,
+    soloA: sum(solo.filter(e=>e.payer==="a")), soloB: sum(solo.filter(e=>e.payer==="b")),
+    from: diff > 0 ? "b" : "a", to: diff > 0 ? "a" : "b", owed: Math.abs(diff)
+  };
+}
+
+/* ---------- storage: db when the viewer has it, browser storage otherwise ---------- */
+const LS = {
+  get(k,d){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+};
+let db = null, unsubExpenses = null, unsubPrev = null;
+
+/* ---------- あいことば（ルーム） ---------- */
+const ROOM_KEY = "wk_room";
+function roomNow(){ try { return localStorage.getItem(ROOM_KEY) || ""; } catch(e){ return ""; } }
+function roomClean(v){
+  return String(v || "").trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, "");
+}
+
+/* Firestore を、これまで使ってきた書き方のまま触れるようにする薄い皮 */
+function fbAdapter(fs, M, room){
+  function wrapQ(s){
+    return { docs: s.docs.map(function(d){ return { id:d.id, data:function(){ return d.data(); } }; }),
+             metadata: { fromCache: !!(s.metadata && s.metadata.fromCache) } };
+  }
+  return {
+    collection: function(name){
+      const col = M.collection(fs, "rooms", room, name);
+      return {
+        doc: function(id){
+          const ref = id ? M.doc(col, id) : M.doc(col);
+          return {
+            set: function(body){ return M.setDoc(ref, body); },
+            delete: function(){ return M.deleteDoc(ref); },
+            onSnapshot: function(cb, err){
+              return M.onSnapshot(ref, function(s){ cb({ exists: s.exists(), data: function(){ return s.data(); } }); }, err);
+            }
+          };
+        },
+        where: function(f, op, v){
+          const q = M.query(col, M.where(f, op, v));
+          return {
+            onSnapshot: function(cb, err){ return M.onSnapshot(q, function(s){ cb(wrapQ(s)); }, err); },
+            get: function(){ return M.getDocs(q).then(wrapQ); }
+          };
+        },
+        onSnapshot: function(cb, err){ return M.onSnapshot(col, function(s){ cb(wrapQ(s)); }, err); },
+        get: function(){ return M.getDocs(col).then(wrapQ); }
+      };
+    }
+  };
+}
+
+const FB_VER = "10.12.5";
+async function initFirebase(room){
+  const [A, U, F] = await Promise.all([
+    import("https://www.gstatic.com/firebasejs/"+FB_VER+"/firebase-app.js"),
+    import("https://www.gstatic.com/firebasejs/"+FB_VER+"/firebase-auth.js"),
+    import("https://www.gstatic.com/firebasejs/"+FB_VER+"/firebase-firestore.js")
+  ]);
+  const app = A.initializeApp(window.FB_CONFIG);
+  await U.signInAnonymously(U.getAuth(app));
+  db = fbAdapter(F.getFirestore(app), F, room);
+  state.mode = "db"; state.room = room;
+  wireDb();
+}
+
+async function initStore(){
+  try {
+    db = (window.claude && typeof window.claude.use === "function") ? await window.claude.use("db") : null;
+  } catch(e){ db = null; }
+  if (db){ state.mode = "db"; wireDb(); return; }
+
+  if (window.FB_CONFIG){
+    const room = roomNow();
+    if (!room){ gateHtml(); return; }
+    try { await initFirebase(room); return; }
+    catch(e){ gateHtml("つながりませんでした。通信環境を確かめて、もう一度お試しください。"); return; }
+  }
+  state.mode = "local"; loadLocal(); state.ready = true; materialize(); render();
+}
+
+/* ---------- 最初の1回だけ出る、あいことばの画面 ---------- */
+function gateHtml(msg){
+  const g = $("#gate");
+  g.innerHTML = '<div class="gate">'
+    + sleepingCat()
+    + '<h1 class="gate-t">わりかん家計簿</h1>'
+    + '<p class="gate-s">ふたりで同じ<b>あいことば</b>を入れると、<br>同じ家計簿につながります。</p>'
+    + (msg ? '<p class="gate-e">'+esc(msg)+'</p>' : '')
+    + '<input class="inp" id="g-room" type="text" inputmode="latin" autocapitalize="none" autocomplete="off" placeholder="warikan-kakeibo-1234" value="'+esc(roomNow())+'">'
+    + '<button class="btn pri" data-act="gatego">はじめる</button>'
+    + '<p class="gate-h">半角の英数字とハイフンで<b>8文字以上</b>。<br>'
+    + '他の人に推測されにくい言葉にしてください。<br>この端末では次回から入力はいりません。</p>'
+    + '</div>';
+  g.hidden = false;
+  document.body.classList.add("gated");
+  setTimeout(function(){ const el = $("#g-room"); if (el) el.focus(); }, 80);
+}
+function dbErr(e){ if (e && (e.code === "revoked" || e.code === "not_granted")) state.readOnly = true; render(); }
+
+function wireDb(){
+  db.collection("settings").doc("app").onSnapshot(s => {
+    state.settings = Object.assign({}, DEFAULTS, s.exists ? s.data() : null); render();
+  }, dbErr);
+  db.collection("recurring").onSnapshot(s => {
+    state.recurring = s.docs.map(d => Object.assign({id:d.id}, d.data())); materialize(); render();
+  }, dbErr);
+  db.collection("budget").onSnapshot(s => {
+    const o = {}; s.docs.forEach(d => { o[d.id] = d.data(); }); state.budgets = o; render();
+  }, dbErr);
+  db.collection("settlements").onSnapshot(s => {
+    const o = {}; s.docs.forEach(d => { o[d.id] = d.data(); }); state.settlements = o; render();
+  }, dbErr);
+  subExpenses();
+}
+/* 先月のふたりの支出だけ、くらべるために別で見ておく */
+function subPrev(){
+  if (unsubPrev) unsubPrev();
+  state.prevShared = null;
+  const pm = ymAdd(state.month, -1);
+  unsubPrev = db.collection("expenses").where("month","==",pm).onSnapshot(function(s){
+    state.prevShared = s.docs.map(function(d){ return d.data(); })
+      .filter(function(e){ return e.shared !== false; })
+      .reduce(function(t,e){ return t + (Number(e.amount)||0); }, 0);
+    render();
+  }, function(){});
+}
+function subExpenses(){
+  subPrev();
+  if (unsubExpenses) unsubExpenses();
+  state.ready = false;
+  unsubExpenses = db.collection("expenses").where("month","==",state.month).onSnapshot(s => {
+    state.expenses = s.docs.map(d => Object.assign({id:d.id}, d.data()));
+    state.ready = true;
+    if (!s.metadata.fromCache) materialize();
+    render();
+  }, dbErr);
+}
+function loadLocal(){
+  const all = LS.get("wk_expenses", []);
+  state.expenses   = all.filter(e => e.month === state.month);
+  state.recurring  = LS.get("wk_recurring", []);
+  state.settlements= LS.get("wk_settlements", {});
+  state.budgets    = LS.get("wk_budget", {});
+  const pm = ymAdd(state.month, -1);
+  state.prevShared = all.filter(function(e){ return e.month === pm && e.shared !== false; })
+    .reduce(function(t,e){ return t + (Number(e.amount)||0); }, 0);
+  state.settings   = Object.assign({}, DEFAULTS, LS.get("wk_settings", null));
+}
+
+async function putExpense(e){
+  state.yearExp = null;                 /* 年間のまとめは次に開くとき読み直す */
+  if (state.mode === "db"){
+    const body = Object.assign({}, e); delete body.id;
+    await db.collection("expenses").doc(e.id || undefined).set(body);
+  } else {
+    const all = LS.get("wk_expenses", []);
+    if (e.id){ const i = all.findIndex(x => x.id === e.id); if (i >= 0) all[i] = e; else all.push(e); }
+    else { e.id = uid("e"); all.push(e); }
+    LS.set("wk_expenses", all); loadLocal(); render();
+  }
+}
+async function dropExpense(id){
+  state.yearExp = null;
+  if (state.mode === "db") await db.collection("expenses").doc(id).delete();
+  else { LS.set("wk_expenses", LS.get("wk_expenses",[]).filter(x => x.id !== id)); loadLocal(); render(); }
+}
+async function putRecurring(r){
+  if (state.mode === "db"){
+    const body = Object.assign({}, r); delete body.id;
+    await db.collection("recurring").doc(r.id || undefined).set(body);
+  } else {
+    const all = LS.get("wk_recurring", []);
+    if (r.id){ const i = all.findIndex(x => x.id === r.id); if (i >= 0) all[i] = r; else all.push(r); }
+    else { r.id = uid("r"); all.push(r); }
+    LS.set("wk_recurring", all); loadLocal(); render();
+  }
+}
+async function dropRecurring(id){
+  if (state.mode === "db") await db.collection("recurring").doc(id).delete();
+  else { LS.set("wk_recurring", LS.get("wk_recurring",[]).filter(x => x.id !== id)); loadLocal(); render(); }
+}
+async function putBudget(k, body){
+  state.yearExp = null;
+  if (state.mode === "db") await db.collection("budget").doc(k).set(body);
+  else { const all = LS.get("wk_budget",{}); all[k] = body; LS.set("wk_budget", all); loadLocal(); render(); }
+}
+async function putSettings(s){
+  if (state.mode === "db") await db.collection("settings").doc("app").set(s);
+  else { LS.set("wk_settings", s); loadLocal(); render(); }
+}
+async function putSettlement(ym, rec){
+  if (state.mode === "db") await db.collection("settlements").doc(ym).set(rec);
+  else { const all = LS.get("wk_settlements",{}); all[ym] = rec; LS.set("wk_settlements", all); loadLocal(); render(); }
+}
+async function dropSettlement(ym){
+  if (state.mode === "db") await db.collection("settlements").doc(ym).delete();
+  else { const all = LS.get("wk_settlements",{}); delete all[ym]; LS.set("wk_settlements", all); loadLocal(); render(); }
+}
+function guard(p){ return Promise.resolve(p).catch(e => { if (e && e.code === "invalid_argument"){ state.readOnly = true; render(); } }); }
+
+/* ---------- fixed costs appear in the month on their own ---------- */
+const materialized = new Set();
+async function materialize(){
+  const m = state.month;
+  if (materialized.has(m) || !state.ready || state.readOnly) return;
+  if (m > THIS_MONTH || !state.recurring.length) return;
+  materialized.add(m);
+  const already = new Set(state.expenses.filter(e => e.recurringId).map(e => e.recurringId));
+  const dim = daysInMonth(m);
+  for (const r of state.recurring){
+    if (r.active === false || already.has(r.id)) continue;
+    if (r.startMonth && m < r.startMonth) continue;
+    await guard(putExpense({
+      id: "fx-" + r.id + "-" + m,   /* fixed id, so a second run overwrites instead of duplicating */
+      month: m, date: m + "-" + pad(Math.min(Number(r.day)||1, dim)),
+      amount: Number(r.amount)||0, category: r.category || "住居",
+      payer: r.payer || "a", shared: r.shared !== false,
+      note: r.name || "固定費", recurringId: r.id, createdAt: Date.now()
+    }));
+  }
+}
+
+/* ---------- render ---------- */
+const $ = s => document.querySelector(s);
+function render(){
+  $("#mlabel").textContent = ymLabel(state.month);
+  $("#main").innerHTML = state.ready ? bodyHtml() : skeletonHtml();
+  const tv = state.view === "year" ? "detail" : state.view;
+  document.querySelectorAll(".tb[data-v]").forEach(function(b){ b.setAttribute("aria-pressed", String(b.dataset.v === tv)); });
+}
+function skeletonHtml(){
+  return '<section class="card hero"><div class="hero-top">'
+       + '<div class="hero-k">今月の清算</div>'
+       + '<div class="skel" style="width:58%;margin:14px auto 2px;height:30px"></div></div></section>';
+}
+
+function bodyHtml(){
+  const s = state.settings, c = calc(state.expenses, s.ratioA);
+  const settled = state.settlements[state.month];
+  const names = { a: s.nameA || DEFAULTS.nameA, b: s.nameB || DEFAULTS.nameB };
+  const f = state.filter;
+  const who = meNow();   /* the personal tab is always this device's own person */
+  const shown = f === "solo" ? state.expenses.filter(e => e.shared === false && (e.payer || "a") === who)
+                             : state.expenses.filter(e => e.shared !== false);
+  const shownTotal = sum(shown);
+  const out = [];
+
+  if (state.readOnly) out.push('<div class="notice"><b>閲覧のみ</b>このリンクでは記録を追加できません。</div>');
+  else if (!s.named) out.push('<div class="notice"><b>はじめに</b>ふたりの名前を登録しましょう。<button data-act="settings">名前を入れる</button></div>');
+  if (state.expenses.some(e => e.sample))
+    out.push('<div class="notice"><b>サンプル</b>使い方がわかる例が入っています。<button data-act="clearsample">まとめて削除</button></div>');
+
+  if (state.view === "budget") return budgetHtml(names, who, c);
+  if (state.view === "year") return yearHtml(names, who);
+
+  /* ---- ホーム: the settlement, and who put in how much ---- */
+  if (state.view === "home"){
+  out.push('<section class="card hero"><div class="hero-top">');
+  if (settled){
+    out.push('<button class="hero-btn done" data-act="unsettle" aria-label="清算を取り消す">✓ 清算済み</button>');
+  } else if (c.owed > 0 && !state.readOnly){
+    out.push('<button class="hero-btn" data-act="settle">清算済みにする</button>');
+  }
+  out.push('<div class="hero-k">'+esc(ymLabel(state.month))+'の清算</div>');
+  if (!state.expenses.length){
+    out.push('<div class="hero-amt zero">まだ記録なし</div>');
+    out.push('<div class="hero-sub">右下の ＋ から最初の支出を入れてみてください</div>');
+  } else if (c.owed === 0){
+    out.push('<div class="hero-amt zero">ぴったり差額なし</div>');
+  } else {
+    out.push('<div class="hero-flow"><span class="chip '+c.from+'">'+cat(c.from)+esc(names[c.from])+'</span><span class="arrow">→</span><span class="chip '+c.to+'">'+cat(c.to)+esc(names[c.to])+'</span></div>');
+    out.push('<div class="hero-amt">'+yen(c.owed)+'</div>');
+  }
+  out.push('</div></section>');
+  if (state.expenses.length){
+    /* 今月のふたりの支出：合計をまず大きく、その下に出した割合を一本の帯で */
+    const nShared = state.expenses.filter(e => e.shared !== false).length;
+    const pct = v => c.sharedTotal ? Math.round(v / c.sharedTotal * 100) : 0;
+    const w = v => c.sharedTotal ? Math.max(v / c.sharedTotal * 100, v ? 3 : 0) : 0;
+    const mySolo = who === "b" ? c.soloB : c.soloA;
+    out.push('<div class="duo">'
+      + [["a",names.a,c.paidA],["b",names.b,c.paidB]].map(function(r){
+          return '<div class="pcard">'+ring(r[0], pct(r[2]))
+               + '<span class="pcard-m"><span class="pcard-n">'+esc(r[1])+'</span>'
+               + '<span class="pcard-v">'+yen(r[2])+'</span></span></div>';
+        }).join("")
+      + '</div>');
+
+    const dlt = (state.prevShared != null && state.prevShared > 0) ? c.sharedTotal - state.prevShared : null;
+    out.push('<section class="card"><div class="card-h"><span class="card-t">ふたりの支出</span><span class="card-n">'+nShared+'件</span></div>'
+      + '<div class="sumbox">'
+      + '<div class="sum-v">'+yen(c.sharedTotal)+'</div>'
+      + '<div class="track stack">'
+        + (c.paidA ? '<span class="fill a" style="width:'+w(c.paidA).toFixed(1)+'%"></span>' : '')
+        + (c.paidB ? '<span class="fill b" style="width:'+w(c.paidB).toFixed(1)+'%"></span>' : '')
+      + '</div>'
+      + (dlt === null ? '' : '<div class="delta '+(dlt > 0 ? "up" : "down")+'">先月より '
+          + (dlt > 0 ? "+" : "−") + yen(Math.abs(dlt)) + (dlt > 0 ? " ↑" : " ↓") + '</div>')
+      + (mySolo ? '<div class="sum-sub">このほかに'+esc(names[who])+'の個人の支出が <b>'+yen(mySolo)+'</b></div>' : '')
+      + '</div></section>');
+
+    /* 最近の記録：トップからそのまま直近を見て、タップで直せる */
+    const mine = state.expenses.filter(e => e.shared !== false || (e.payer || "a") === who)
+      .slice().sort(function(x,y){ return x.date === y.date ? (y.createdAt||0)-(x.createdAt||0) : (x.date < y.date ? 1 : -1); });
+    if (mine.length){
+      out.push('<section class="card"><div class="card-h"><span class="card-t">最近の記録</span>'
+        + '<button class="card-a" data-act="view" data-v="detail">すべて見る ›</button></div>'
+        + dayGroups(mine.slice(0,4), names)
+        + '<div style="height:8px"></div></section>');
+    }
+  }
+  return out.join("");
+  }
+
+  /* ---- 明細: the filter, the donut and the ledger ---- */
+  if (state.expenses.length){
+    const tabs = [["shared","ふたり",c.sharedTotal],["solo","個人",who === "b" ? c.soloB : c.soloA]];
+    out.push('<div class="seg2">'
+      + tabs.map(function(tb){
+          return '<button data-act="filt" data-v="'+tb[0]+'" aria-pressed="'+(f===tb[0])+'">'
+               + tb[1] + '<b>' + yen(tb[2]) + '</b></button>';
+        }).join("")
+      + '</div>');
+
+    /* 3 — who put in how much: just the figures. On the personal tab, buttons that pick whose. */
+
+    /* 4 — what the money went on, as a donut with every slice named beside it */
+    const byCat = {};
+    shown.forEach(function(e){ const k = e.category || "その他"; byCat[k] = (byCat[k]||0) + (Number(e.amount)||0); });
+    const ranked = Object.keys(byCat).map(k => [k, byCat[k]]).sort((x,y) => y[1]-x[1]);
+    const usedCol = {};
+    const slices = ranked.slice(0,6).map(function(r){
+      let col = catVar(r[0]);
+      if (usedCol[col]) col = "var(--k0)";   /* two categories sharing a hue: the second goes neutral */
+      usedCol[col] = 1;
+      return { k:r[0], v:r[1], c:col };
+    });
+    if (ranked.length > 6) slices.push({ k:"ほか", c:"var(--k0)",
+      v: ranked.slice(6).reduce(function(t,r){ return t + r[1]; }, 0) });
+    const tabName = f === "solo" ? names[who] + "の個人支出" : "ふたりの支出";
+    out.push('<section class="card"><div class="card-h"><span class="card-t">なにに使ったか</span><span class="card-n">'+esc(tabName)+'</span></div>');
+    if (!slices.length){
+      out.push('<div class="empty"><div class="empty-s">この区分の記録はまだありません</div></div>');
+    } else {
+      out.push('<div class="pie">' + donut(slices, shownTotal) + '<div class="legend">'
+        + slices.map(function(p){
+            const pct = shownTotal ? Math.round(p.v / shownTotal * 100) : 0;
+            const body = '<span class="sw" style="background:'+p.c+'"></span>'
+                       + '<span class="lg-k">'+esc(p.k)+' <i>'+pct+'%</i></span>'
+                       + '<span class="lg-v">'+yen(p.v)+'</span>';
+            if (p.k === "ほか") return '<div class="lg">'+body+'</div>';
+            const on = state.cat === p.k;
+            return '<button class="lg lgb'+(on?" on":"")+'" data-act="catfilt" data-v="'+esc(p.k)+'" aria-pressed="'+on+'">'+body+'</button>';
+          }).join("")
+        + '</div></div>');
+    }
+    out.push('</section>');
+  }
+
+  /* 4 — the ledger itself */
+  out.push('<section class="card">');
+  const rows = state.cat ? shown.filter(e => (e.category || "その他") === state.cat) : shown;
+  out.push('<div class="card-h"><span class="card-t">記録</span><span class="card-n">'+rows.length+'件</span></div>');
+  if (!state.expenses.length){
+    out.push('<div class="empty">'+sleepingCat()+'<div class="empty-t">この月はまだ空です</div>'
+           + '<div class="empty-s">支出を1回入れるだけで、家計簿の集計と<br>割り勘の清算額が同時に出ます。<br>家賃などは設定から固定費に登録しておくと<br>毎月ひとりでに入ります。</div></div>');
+  } else if (!rows.length){
+    out.push('<div class="empty"><div class="empty-s">'+(state.cat ? esc(state.cat)+'の記録はこの月にはありません' : 'この区分の記録はまだありません')+'</div></div>');
+  } else {
+    out.push(dayGroups(rows, names));
+    out.push('<div style="height:8px"></div>');
+  }
+  out.push('</section>');
+
+  return out.join("");
+}
+
+/* ---------- modals ---------- */
+function openModal(html, forceTop){
+  const m = $("#modal");
+  const was = m.querySelector(".sheet"), kept = was ? was.scrollTop : 0;   /* keep the place when re-rendering */
+  const top = (typeof forceTop === "number") ? forceTop : kept;
+  const wasScrim = m.querySelector(".scrim"), topScrim = wasScrim ? wasScrim.scrollTop : 0;
+  m.innerHTML = '<div class="scrim" data-act="scrim"><div class="sheet" role="dialog" aria-modal="true">'+html+'</div></div>';
+  m.hidden = false; document.body.style.overflow = "hidden";
+  { const s = m.querySelector(".sheet"); if (s) s.scrollTop = top; }
+  if (topScrim){ const s = m.querySelector(".scrim"); if (s) s.scrollTop = topScrim; }
+}
+function closeModal(){ const m=$("#modal"); m.hidden = true; m.innerHTML = ""; document.body.style.overflow = ""; state.modal = null; }
+
+/* 日付ごとの一覧。明細でもホームの「最近の記録」でも同じ見た目で使う */
+function dayGroups(list, names){
+  const days = {};
+  list.forEach(function(e){ (days[e.date] = days[e.date] || []).push(e); });
+  return Object.keys(days).sort().reverse().map(function(d){
+    const inDay = days[d].slice().sort(function(x,y){ return (y.createdAt||0)-(x.createdAt||0); });
+    return '<div class="day"><div class="day-h"><span>'+esc(dayLabel(d))+'</span></div>'
+      + inDay.map(function(e){
+          const note = String(e.note || "").trim();
+          const cname = e.category || "その他";
+          return '<div class="swipe">'
+            + '<button class="swipe-del" data-act="swipedel" data-id="'+esc(e.id)+'" tabindex="-1">削除</button>'
+            + '<button class="item" data-act="edit" data-id="'+esc(e.id)+'">'
+            + '<span class="cbadge" style="--k:'+catVar(cname)+'" role="img" aria-label="'+esc(cname)+'">'+catIcon(cname)+'</span>'
+            + '<span class="item-m"><span class="item-n">'+esc(note || cname)+'</span>'
+            + (e.shared !== false && e.bearer ? '<span class="tag">'+esc(e.bearer==="b"?names.b:names.a)+'の分</span>' : '')
+            + (e.recurringId ? '<span class="tag fix">固定費</span>' : '')
+            + '</span>'
+            + '<span class="dot '+(e.payer==="b"?"b":"a")+'" title="'+esc(e.payer==="b"?names.b:names.a)+'"></span>'
+            + '<span class="item-a">'+yen(e.amount)+'</span></button></div>';
+        }).join("")
+      + '</div>';
+  }).join("");
+}
+
+/* 貯金・カードなど「とっておき」の印 */
+function saveIcon(){
+  return '<svg class="cico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"'
+    + ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<rect x="3.2" y="6.4" width="17.6" height="12.2" rx="3.2"/><path d="M3.2 10.6h17.6"/>'
+    + '<path d="M15.6 15h3"/></svg>';
+}
+
+/* その支出のうち、自分が持つぶん */
+function mineShare(e, who, ratioA){
+  const v = Number(e.amount) || 0;
+  if (e.shared === false) return (e.payer || "a") === who ? v : 0;
+  if (e.bearer) return e.bearer === who ? v : 0;
+  const r = (Number(ratioA) || 50) / 100;
+  return who === "a" ? v * r : v * (1 - r);
+}
+
+/* ---------- 年間のまとめ: その年ぶんだけ、開いたときに一度読む ---------- */
+async function loadYear(y){
+  state.yearLoading = true; state.yearExp = null; render();
+  let all = [];
+  if (state.mode === "db"){
+    try { const s = await db.collection("expenses").get(); all = s.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); }); }
+    catch(e){ all = []; }
+  } else {
+    all = LS.get("wk_expenses", []);
+  }
+  state.yearExp = all.filter(function(e){ return String(e.month || "").slice(0,4) === String(y); });
+  state.yearLoading = false; render();
+}
+function yearHtml(names, who){
+  const y = state.year;
+  const out = [];
+  /* 年の切り替えと ふたり/個人 を1行にまとめて、下の一覧を広く見せる */
+  out.push('<div class="ytop">'
+    + '<div class="ynav"><button class="mbtn" data-act="ynav" data-v="-1" aria-label="前の年">‹</button>'
+    + '<span class="ylabel num">'+esc(y)+'年</span>'
+    + '<button class="mbtn" data-act="ynav" data-v="1" aria-label="次の年">›</button></div>'
+    + '<div class="seg2 mini2">'
+    + [["shared","ふたり"],["solo","個人"]].map(function(t){
+        return '<button data-act="filt" data-v="'+t[0]+'" aria-pressed="'+(state.filter===t[0])+'">'+t[1]+'</button>';
+      }).join("")
+    + '</div></div>');
+
+  if (state.yearLoading || state.yearExp == null){
+    out.push('<section class="card"><div class="empty"><div class="empty-s">読み込み中…</div></div></section>');
+    return out.join("");
+  }
+  const f = state.filter;
+  const rows = f === "solo"
+    ? state.yearExp.filter(function(e){ return e.shared === false && (e.payer || "a") === who; })
+    : state.yearExp.filter(function(e){ return e.shared !== false; });
+
+  if (!rows.length){
+    out.push('<section class="card"><div class="empty">'+sleepingCat()
+      + '<div class="empty-t">'+esc(y)+'年の記録はまだありません</div></div></section>');
+    return out.join("");
+  }
+
+  const byMonth = {}, byCat = {}, byCM = {};
+  rows.forEach(function(e){
+    const m = e.month, k = e.category || "その他", v = Number(e.amount) || 0;
+    byMonth[m] = (byMonth[m] || 0) + v;
+    byCat[k] = (byCat[k] || 0) + v;
+    (byCM[k] = byCM[k] || {})[m] = (byCM[k][m] || 0) + v;
+  });
+  const months = Object.keys(byMonth);
+  const n = months.length || 1;                    /* 記録のある月だけで平均する */
+  /* 個人は「個人で登録した支出」＋「やりくりでとっておく分」だけを見る */
+  const extra = (f === "solo")
+    ? myBudget(who).items.map(function(x){ return { k:x.name, v:x.amount * n, m:x.amount, fix:true }; })
+    : [];
+  const keepM = extra.reduce(function(t,x){ return t + x.m; }, 0);
+  if (keepM) months.forEach(function(m){ byMonth[m] += keepM; });
+  extra.forEach(function(x){ const o = {}; months.forEach(function(m){ o[m] = x.m; }); byCM[x.k] = o; });
+  const total = rows.reduce(function(t,e){ return t + (Number(e.amount)||0); }, 0) + keepM * n;
+
+  /* 貯金やカードも、カテゴリーの仲間として一緒に並べる */
+  const ranked = Object.keys(byCat).map(function(k){ return { k:k, v:byCat[k], fix:false }; })
+    .concat(extra).sort(function(a,b){ return b.v - a.v; });
+
+  /* カテゴリーをタップすると、上のグラフもそのカテゴリーだけに切り替わる */
+  const sel = (state.yearCat && byCM[state.yearCat]) ? state.yearCat : null;
+  const series = sel ? byCM[sel] : byMonth;
+  const selRow = sel ? ranked.filter(function(r){ return r.k === sel; })[0] : null;
+  const sTotal = selRow ? selRow.v : total;
+  const sCount = sel ? rows.filter(function(e){ return (e.category || "その他") === sel; }).length : rows.length;
+  const peak = Math.max.apply(null, months.map(function(m){ return series[m] || 0; }).concat([0]));
+  const col = sel ? (selRow && selRow.fix ? "var(--k0)" : catVar(sel)) : "var(--accent)";
+
+  out.push('<section class="card"><div class="card-h">'
+    + '<span class="card-t">'+(sel ? esc(sel) : esc(y)+'年の合計')+'</span>'
+    + (sel ? '<button class="card-a" data-act="ycat" data-v="">すべて ✕</button>'
+           : '<span class="card-n">'+rows.length+'件</span>')
+    + '</div>'
+    + '<div class="sumbox"><div class="sum-v">'+yen(sTotal)+'</div>'
+    + '<div class="avgline">月平均 <b>'+yen(sTotal/n)+'</b><span>記録のある'+n+'ヶ月ぶん'
+      + (sel && !(selRow && selRow.fix) ? '・'+sCount+'件' : '')+'</span></div>'
+    + '<div class="ybars">'
+    + Array.from({length:12}, function(_,i){
+        const m = y + "-" + pad(i+1), v = series[m] || 0;
+        const h = peak ? Math.max(v / peak * 100, v ? 4 : 1.5) : 1.5;
+        return '<button class="yb'+(v?"":" off")+'" data-act="gomonth" data-v="'+m+'" title="'+(i+1)+'月 '+yen(v)+'">'
+          + '<span class="yb-f" style="height:'+h.toFixed(1)+'%;background:'+(v?col:"")+'"></span>'
+          + '<span class="yb-k">'+(i+1)+'</span></button>';
+      }).join("")
+    + '</div></div></section>');
+
+  out.push('<section class="card"><div class="card-h"><span class="card-t">カテゴリー別</span>'
+    + '<span class="card-n">合計 '+yen(total)+'</span></div><div class="rows">'
+    + ranked.map(function(r){
+        const w = total ? Math.max(r.v / total * 100, 2) : 0;
+        const c2 = r.fix ? "var(--k0)" : catVar(r.k);
+        return '<button class="row rowb" data-act="ycat" data-v="'+esc(r.k)+'" aria-pressed="'+(sel===r.k)+'">'
+          + '<span class="row-l"><span class="cbadge sm" style="--k:'+c2+'">'
+            + (r.fix ? saveIcon() : catIcon(r.k)) + '</span>'+esc(r.k)
+            + (r.fix ? '<span class="tag keep">とっておき</span>' : '') + '</span>'
+          + '<span class="row-v">'+yen(r.v)+'</span>'
+          + '<span class="track"><span class="fill" style="width:'+w.toFixed(1)+'%;background:'+c2+'"></span></span>'
+          + '<span class="row-s">月平均 '+yen(r.v/n)+'　/　'+Math.round(total?r.v/total*100:0)+'%</span></button>';
+      }).join("")
+    + '</div>'
+    + (extra.length ? '<p class="bnote">貯金やカードは、やりくりで決めた毎月の額を'+n+'ヶ月ぶんにしためやすです。</p>' : '')
+    + '</section>');
+  return out.join("");
+}
+
+/* ---------- やりくり: 収入をどう割り振って、あといくら使えるか ---------- */
+function myBudget(who){
+  const b = state.budgets[who] || {};
+  return { income: Number(b.income) || 0,
+           items: (b.items || []).filter(x => x && x.name).map(function(x){
+             return { id: x.id || uid("b"), name: String(x.name), amount: Number(x.amount) || 0 };
+           }) };
+}
+function budgetHtml(names, who, c){
+  const b = myBudget(who);
+  const alloc = b.items.reduce(function(t,x){ return t + x.amount; }, 0);
+  const free  = b.income - alloc;
+  /* 使った額 = 自分の個人の支出 ＋ ふたりの支出のうち自分が負担するぶん */
+  const mySolo = who === "b" ? c.soloB : c.soloA;
+  const myDue  = who === "a" ? c.dueA : c.sharedTotal - c.dueA;
+  const spent  = Math.round(mySolo + myDue);
+  const left   = free - spent;
+  const used   = free > 0 ? Math.min(spent / free * 100, 100) : (spent ? 100 : 0);
+  const over   = left < 0;
+  const out = [];
+
+  if (!b.income && !b.items.length){
+    return '<section class="card"><div class="empty">'+sleepingCat()
+      + '<div class="empty-t">やりくりを決める</div>'
+      + '<div class="empty-s">収入と、毎月の貯金・返済などを登録すると、<br>今月使えるお金と、あといくら使えるかが出ます。</div>'
+      + '<div style="margin-top:16px"><button class="btn pri" data-act="bedit">はじめる</button></div></div></section>';
+  }
+
+  /* 見るところは1つ ―― 今月あといくら使えるか。その根拠を帯と1行で添える */
+  const upct = free > 0 ? Math.min(Math.round(spent / free * 100), 100) : (spent ? 100 : 0);
+  const rpct = Math.max(100 - upct, 0);
+  out.push('<section class="card hero"><div class="hero-top plain">'
+    + '<button class="hero-btn" data-act="bedit">編集</button>'
+    + '<div class="hero-k">'+esc(names[who])+'・'+esc(ymLabel(state.month))+'</div>'
+    + '<div class="hero-amt'+(over?" neg":"")+'">'+yen(left)+'</div>'
+    + '<div class="hero-sub">'+(over ? '予定より使っています' : 'あと使えるお金')+'</div>'
+    /* のこりの割合は、同じ紺の中の左にリングで */
+    + '<span class="hero-ring">'+ring("", rpct, over ? "var(--danger)" : "#FFFFFF")+'</span>'
+    + '</div></section>');
+
+  const row = function(name, v, cls){
+    return '<div class="brow'+(cls?" "+cls:"")+'"><span class="brow-n">'+esc(name)+'</span>'
+         + '<span class="brow-v'+(v<0?" minus":"")+'">'+(v<0?"−":"")+yen(Math.abs(v))+'</span></div>';
+  };
+  out.push('<section class="card"><div class="card-h"><span class="card-t">内訳</span>'
+    + '<button class="card-a" data-act="bedit">編集 ›</button></div><div class="blist">'
+    + row("収入", b.income)
+    + b.items.map(function(x){ return row(x.name, -x.amount, "ind"); }).join("")
+    + row("今月使えるお金", free, "tot")
+    + row(ymLabel(state.month)+"に使った", -spent, "ind")
+    + row("あと使える", left, "tot hi")
+    + '</div></section>');
+
+  out.push('<section class="card"><div class="card-h"><span class="card-t">「使った」の中身</span>'
+    + '<button class="card-a" data-act="view" data-v="detail">明細を見る ›</button></div><div class="blist">'
+    + row("個人の支出", mySolo, "ind")
+    + row("ふたりの支出のうち自分の負担", Math.round(myDue), "ind")
+    + '</div><p class="bnote">家賃や食費など、ふたりの支出に入れているぶんは自動で引かれます。</p></section>');
+
+  return out.join("");
+}
+
+function budgetSheet(){
+  const who = meNow(), b = myBudget(who);
+  state.modal = { kind:"budget", who: who, income: b.income,
+                  items: b.items.length ? b.items : [{ id: uid("b"), name:"貯金", amount:0 }] };
+  renderBudgetSheet();
+}
+function renderBudgetSheet(){
+  const d = state.modal, s = state.settings;
+  const nm = d.who === "b" ? (s.nameB || DEFAULTS.nameB) : (s.nameA || DEFAULTS.nameA);
+  openModal(
+    '<div class="sheet-h"><span class="sheet-t">'+esc(nm)+'のやりくり</span><button class="iconbtn" data-act="close" aria-label="閉じる">✕</button></div>'
+  + '<div class="fields">'
+  + '<div class="f"><label class="f-l" for="b-income">毎月の収入（手取り）</label>'
+    + '<input class="inp amt" id="b-income" type="text" inputmode="numeric" placeholder="0" value="'+esc(d.income||"")+'"></div>'
+  + '<div class="f"><span class="f-l">毎月とっておくお金</span><div class="bitems">'
+    + d.items.map(function(x){
+        return '<div class="birow">'
+          + '<input class="inp bname" data-bi="name" data-id="'+esc(x.id)+'" type="text" maxlength="10" placeholder="貯金 など" value="'+esc(x.name)+'">'
+          + '<input class="inp bamt" data-bi="amount" data-id="'+esc(x.id)+'" type="text" inputmode="numeric" placeholder="0" value="'+esc(x.amount||"")+'">'
+          + '<button class="bdel" data-act="bdel" data-id="'+esc(x.id)+'" aria-label="削除">✕</button></div>';
+      }).join("")
+    + '</div><button class="btn addrow" data-act="badd">＋ 項目を追加</button></div>'
+  + '<p class="hint">貯金・返済・積立など、使う前によけておくものを入れてください。家賃や食費はふたりの支出から自動で引かれます。</p>'
+  + '</div>'
+  + '<div class="sheet-f"><button class="btn pri" data-act="bsave">保存して閉じる</button></div>'
+  );
+}
+function readBudgetForm(){
+  const d = state.modal; if (!d || d.kind !== "budget") return;
+  const inc = $("#b-income");
+  if (inc) d.income = Number(String(inc.value).replace(/[^0-9.-]/g,"")) || 0;
+  d.items.forEach(function(it){
+    const n = document.querySelector('[data-bi="name"][data-id="'+it.id+'"]');
+    const a = document.querySelector('[data-bi="amount"][data-id="'+it.id+'"]');
+    if (n) it.name = n.value.trim();
+    if (a) it.amount = Number(String(a.value).replace(/[^0-9.-]/g,"")) || 0;
+  });
+}
+
+/* the entry read back as one plain sentence — quicker to check than four separate controls */
+function sayLine(d, names){
+  const amt = Number(String(d.amount).replace(/[^0-9.-]/g,"")) || 0;
+  const payer = d.payer === "b" ? names.b : names.a;
+  const money = amt ? '<span class="m">'+yen(amt)+'</span>' : '<span class="m off">◯◯円</span>';
+  const r = Number(state.settings.ratioA) || 50;
+  const half = r === 50 ? '<b>ふたり</b>で半分ずつ。' : '<b>ふたり</b>で '+r+' : '+(100-r)+' に分けます。';
+  const tail = d.shared === false
+    ? '<b>'+esc(payer)+'</b>の個人の支出。わりかんはしません。'
+    : (d.bearer ? '<b>'+esc(d.bearer === "b" ? names.b : names.a)+'</b>が全額を負担。' : half);
+  return '<b>'+esc(payer)+'</b>が '+money+' を払って、'+tail;
+}
+function updateSay(){
+  const el = $("#f-say"); if (!el || !state.modal) return;
+  const s = state.settings;
+  el.innerHTML = sayLine(state.modal, { a: s.nameA || DEFAULTS.nameA, b: s.nameB || DEFAULTS.nameB });
+}
+
+function expenseSheet(e){
+  const s = state.settings, isNew = !(e && e.id);
+  const names = { a: s.nameA || DEFAULTS.nameA, b: s.nameB || DEFAULTS.nameB };
+  state.modal = Object.assign({
+    kind:"expense", id:null, date: state.month === THIS_MONTH ? todayISO() : state.month + "-01",
+    amount:"", category:"食費", payer:"a", shared:true, bearer:null, note:"", recurringId:null, addingCat:false, picking:false
+  }, e || {});
+  const d = state.modal;
+  const cats = allCats().map(c => '<button type="button" style="--k:'+catVar(c)+';--ks:'+catSel(c)+'" data-act="cat" data-v="'+esc(c)+'" aria-pressed="'+(d.category===c)+'">'+esc(c)+'</button>').join("")
+    + '<button type="button" class="addcat" data-act="newcat">＋ 追加</button>';
+
+  openModal(
+    '<div class="sheet-h"><span class="sheet-t">'+(isNew?"支出を追加":"支出を編集")+'</span><button class="iconbtn" data-act="close" aria-label="閉じる">✕</button></div>'
+  + '<div class="fields">'
+  + '<div class="row2">'
+    + '<div class="f"><label class="f-l" for="f-amt">金額</label><input class="inp amt" id="f-amt" type="text" inputmode="numeric" placeholder="0" value="'+esc(d.amount||"")+'"></div>'
+    + '<div class="f"><label class="f-l" for="f-date">日付</label><input class="inp" id="f-date" type="date" value="'+esc(d.date)+'"></div>'
+  + '</div>'
+  + '<div class="f"><span class="f-l">だれが払った？</span><div class="seg ab">'
+      + '<button type="button" data-act="payer" data-v="a" aria-pressed="'+(d.payer==="a")+'">'+cat("a")+'<span class="nm">'+esc(names.a)+'</span></button>'
+      + '<button type="button" data-act="payer" data-v="b" aria-pressed="'+(d.payer==="b")+'">'+cat("b")+'<span class="nm">'+esc(names.b)+'</span></button></div></div>'
+  + '<div class="f"><span class="f-l">この支出は？</span><div class="splitbox">'
+      + '<div class="swt">'
+        + '<button type="button" data-act="shared" data-v="1" aria-pressed="'+(d.shared!==false)+'">ふたりの支出</button>'
+        + '<button type="button" data-act="shared" data-v="0" aria-pressed="'+(d.shared===false)+'">個人の支出</button></div>'
+      + (d.shared !== false
+          ? '<div class="bearwrap"><span class="bear-l">だれの分？</span><div class="bear">'
+            + '<button type="button" class="bchip" data-act="bearer" data-v="" aria-pressed="'+(!d.bearer)+'">ふたりの分</button>'
+            + '<button type="button" class="bchip" data-act="bearer" data-v="a" aria-pressed="'+(d.bearer==="a")+'"><span class="nm">'+esc(names.a)+'</span>の分</button>'
+            + '<button type="button" class="bchip" data-act="bearer" data-v="b" aria-pressed="'+(d.bearer==="b")+'"><span class="nm">'+esc(names.b)+'</span>の分</button></div></div>'
+          : '<p class="bear-n">この支出は清算には入りません。</p>')
+      + '</div></div>'
+  + '<div class="f"><span class="f-l">カテゴリー</span>'
+      + '<button type="button" class="catrow'+(d.picking?" open":"")+'" data-act="pickcat" aria-expanded="'+(d.picking?"true":"false")+'">'
+        + '<span class="cbadge" style="--k:'+catVar(d.category)+'">'+catIcon(d.category)+'</span>'
+        + '<span class="catrow-n">'+esc(d.category)+'</span><span class="chev">›</span></button>'
+      + (d.picking
+          ? '<div class="catpanel" id="f-catpanel"><div class="cats">'+cats+'</div>'
+            + (d.addingCat ? '<div class="newcat-row"><input class="inp" id="f-newcat" type="text" maxlength="8" placeholder="旅行 など"><button class="btn pri" data-act="savecat">追加</button></div>' : '')
+            + '</div>'
+          : '')
+      + '</div>'
+  + '<div class="f"><label class="f-l" for="f-note">メモ</label><input class="inp" id="f-note" type="text" placeholder="スーパー、ドラッグストア など" value="'+esc(d.note||"")+'"></div>'
+  + (d.recurringId ? '<p class="hint">この記録は固定費から自動で入ったものです。金額を変えてもこの月だけに反映されます。</p>' : '')
+  + '</div>'
+  + '<div class="sheet-f">'
+    + (isNew ? '' : '<button class="btn" data-act="delete">削除</button>')
+    + '<button class="btn pri" data-act="save">保存</button></div>'
+  );
+  if (d.picking){
+    /* nudge the list into view only if it opened off the bottom */
+    setTimeout(function(){ const p = $("#f-catpanel"); if (p) p.scrollIntoView({block:"nearest"}); }, 0);
+    if (d.addingCat) setTimeout(function(){ const el = $("#f-newcat"); if (el) el.focus(); }, 60);
+    return;
+  }
+  setTimeout(()=>{ const el=$("#f-amt"); if(el && isNew) el.focus(); },50);
+}
+
+function settingsSheet(){
+  const s = state.settings;
+  state.modal = { kind:"settings", nameA:s.nameA, nameB:s.nameB, ratioA:Number(s.ratioA)||50, newFix:null };
+  const d = state.modal;
+  const fixes = state.recurring.length
+    ? state.recurring.map(r => '<div class="fixrow">'+cat(r.payer==="b"?"b":"a")
+        + '<span class="item-m"><span class="item-n">'+esc(r.name)+'</span>'
+        + '<span class="item-s">毎月'+ (Number(r.day)||1) +'日・'+esc(r.category||"住居")+(r.shared===false?'・個人':'')+'</span></span>'
+        + '<span class="item-a">'+yen(r.amount)+'</span>'
+        + '<button class="btn ghost" data-act="delfix" data-id="'+esc(r.id)+'" style="padding:4px 8px">削除</button></div>').join("")
+    : '<p class="hint">まだありません。家賃・通信費・サブスクなど毎月同じ支出を登録しておくと、月が変わるたびに自動で記録に入ります。</p>';
+  openModal(
+    '<div class="sheet-h"><span class="sheet-t">設定</span><button class="iconbtn" data-act="close" aria-label="閉じる">✕</button></div>'
+  + '<div class="fields">'
+  + '<div class="f"><span class="f-l">ふたりの名前</span>'
+      + '<div class="namerow">'+cat("a")+'<input class="inp" id="s-a" type="text" maxlength="10" value="'+esc(d.nameA)+'" placeholder="あなたの名前"></div>'
+      + '<div class="namerow">'+cat("b")+'<input class="inp" id="s-b" type="text" maxlength="10" value="'+esc(d.nameB)+'" placeholder="相手の名前"></div>'
+      + '<span class="hint">ここで入れた名前が、清算・記録・グラフすべてに出ます。10文字まで。</span></div>'
+  + '<div class="f"><span class="f-l">この端末を使うのは</span><div class="seg ab">'
+      + '<button type="button" data-act="meis" data-v="a" aria-pressed="'+(meNow()==="a")+'">'+cat("a")+'<span class="nm">'+esc(d.nameA)+'</span></button>'
+      + '<button type="button" data-act="meis" data-v="b" aria-pressed="'+(meNow()==="b")+'">'+cat("b")+'<span class="nm">'+esc(d.nameB)+'</span></button></div>'
+      + '<span class="hint">「個人」タブを開いたとき、最初にこの人の支出が出ます。端末ごとに切り替えられます。</span></div>'
+  + '<div class="f"><span class="f-l">負担のわりあい</span><div class="ratio">'
+      + '<span class="ratio-v" id="s-rv">'+d.ratioA+" : "+(100-d.ratioA)+'</span>'
+      + '<input id="s-ratio" type="range" min="0" max="100" step="5" value="'+d.ratioA+'"></div>'
+      + '<span class="hint">左が「<span class="nm-a">'+esc(d.nameA)+'</span>」の負担ぶんです。半分ずつなら 50:50 のまま。</span></div>'
+  + '<hr class="sep">'
+  + '<div class="f"><span class="f-l">カテゴリー</span><div class="cats">'
+      + allCats().map(function(c){
+          const mine = (state.settings.cats||[]).indexOf(c) >= 0 && CATS.indexOf(c) < 0;
+          return '<span class="catpill'+(mine?' custom':'')+'" style="--k:'+catVar(c)+'">'+esc(c)
+               + (mine ? '<button data-act="delcat" data-v="'+esc(c)+'" aria-label="'+esc(c)+'を削除">✕</button>' : '')
+               + '</span>';
+        }).join("")
+      + '</div>'
+      + '<div class="newcat-row"><input class="inp" id="s-newcat" type="text" maxlength="8" placeholder="旅行 など"><button class="btn" data-act="addcat">追加</button></div>'
+      + '<span class="hint">自分で足したカテゴリーだけ削除できます。削除しても、記録済みの支出のカテゴリー名はそのまま残ります。</span></div>'
+  + '<hr class="sep">'
+  + '<div class="f"><span class="f-l">毎月の固定費</span><div class="fixlist">'+fixes+'</div></div>'
+  + '<div class="f"><span class="f-l">固定費を追加</span>'
+      + '<input class="inp" id="x-name" type="text" placeholder="家賃">'
+      + '<input class="inp" id="x-amt" type="text" inputmode="numeric" placeholder="金額">'
+      + '<select class="inp" id="x-cat">'+allCats().map(c=>'<option'+(c==="住居"?" selected":"")+'>'+esc(c)+'</option>').join("")+'</select>'
+      + '<div class="seg ab" style="margin-top:2px">'
+        + '<button type="button" data-act="xpayer" data-v="a" aria-pressed="true">'+cat("a")+'<span class="nm">'+esc(d.nameA)+'</span></button>'
+        + '<button type="button" data-act="xpayer" data-v="b" aria-pressed="false">'+cat("b")+'<span class="nm">'+esc(d.nameB)+'</span></button></div>'
+      + '<div class="dayrow"><span>毎月</span><input class="inp" id="x-day" type="number" min="1" max="31" value="1"><span>日に記録する</span></div>'
+      + '<button class="btn" data-act="addfix">固定費として登録</button></div>'
+  + (state.room ? '<hr class="sep">'
+      + '<div class="f"><span class="f-l">あいことば</span>'
+      + '<div class="roombox"><span class="num">'+esc(state.room)+'</span>'
+      + '<button class="btn ghost" data-act="roomout" style="padding:5px 10px;flex:none">変更</button></div>'
+      + '<span class="hint">同じあいことばを入れた人と、同じ家計簿を見ます。相手にはこの言葉を伝えてください。「変更」を押すと、この端末だけ入力画面に戻ります（記録は消えません）。</span></div>' : '')
+  + '<hr class="sep">'
+  + '<p class="hint">このアプリをiPhoneのホーム画面に置くには、Safariで開いて共有ボタン → 「ホーム画面に追加」。アイコンから他のアプリと同じように開けます。</p>'
+  + '</div>'
+  + '<div class="sheet-f"><button class="btn pri" data-act="savesettings">保存して閉じる</button></div>'
+  );
+}
+
+/* ---------- events ---------- */
+function readExpenseForm(){
+  const d = state.modal;
+  const a = $("#f-amt"), dt = $("#f-date"), nt = $("#f-note");
+  if (a) d.amount = Number(String(a.value).replace(/[^0-9.-]/g,"")) || 0;
+  if (dt && dt.value) d.date = dt.value;
+  if (nt) d.note = nt.value.trim();
+}
+
+/* swipe-to-delete: a left swipe on a row slides it aside and shows 削除 */
+const SWIPE_W = 84;
+let swTrack = null, swX = 0, swY = 0, swDX = 0, swAxis = null, swUntil = 0;
+function closeSwipes(except){
+  document.querySelectorAll(".swipe.open").forEach(function(s){ if (s !== except) s.classList.remove("open"); });
+}
+document.addEventListener("touchstart", function(ev){
+  const s = ev.target.closest(".swipe");
+  if (!s){ closeSwipes(null); swTrack = null; return; }
+  swTrack = s; swX = ev.touches[0].clientX; swY = ev.touches[0].clientY; swDX = 0; swAxis = null;
+}, {passive:true});
+document.addEventListener("touchmove", function(ev){
+  if (!swTrack) return;
+  const it = swTrack.querySelector(".item"); if (!it) return;
+  const dx = ev.touches[0].clientX - swX, dy = ev.touches[0].clientY - swY;
+  if (swAxis === null){
+    if (Math.abs(dx) < 7 && Math.abs(dy) < 7) return;
+    swAxis = Math.abs(dx) > Math.abs(dy) + 2 ? "x" : "y";
+    if (swAxis === "x"){ closeSwipes(swTrack); it.style.transition = "none"; }
+    else { swTrack = null; return; }
+  }
+  const base = swTrack.classList.contains("open") ? -SWIPE_W : 0;
+  swDX = Math.max(-SWIPE_W - 16, Math.min(0, base + dx));
+  it.style.transform = "translateX(" + swDX + "px)";
+  if (ev.cancelable) ev.preventDefault();   /* the page must not scroll sideways mid-swipe */
+}, {passive:false});
+function swipeEnd(){
+  if (!swTrack) return;
+  const it = swTrack.querySelector(".item");
+  if (it){ it.style.transition = ""; it.style.transform = ""; }
+  if (swAxis === "x"){ swTrack.classList.toggle("open", swDX < -SWIPE_W / 2); swUntil = Date.now() + 350; }
+  swTrack = null; swAxis = null;
+}
+document.addEventListener("touchend", swipeEnd);
+document.addEventListener("touchcancel", swipeEnd);
+
+document.addEventListener("click", function(ev){
+  const t = ev.target.closest("[data-act]"); if (!t) return;
+  const act = t.dataset.act;
+
+  /* the click that follows a swipe is the swipe itself, not a tap */
+  if (Date.now() < swUntil && t.closest(".swipe")) return;
+  if (act === "swipedel"){ closeSwipes(null); guard(dropExpense(t.dataset.id)); return; }
+  /* while a row is open, a tap anywhere just puts it back */
+  const openRow = document.querySelector(".swipe.open");
+  if (openRow){ closeSwipes(null); if (openRow.contains(t)) return; }
+
+  if (act === "prev"){ state.month = ymAdd(state.month,-1); state.cat = null; if (state.mode==="db") subExpenses(); else loadLocal(); materialize(); render(); return; }
+  if (act === "next"){ state.month = ymAdd(state.month, 1); state.cat = null; if (state.mode==="db") subExpenses(); else loadLocal(); materialize(); render(); return; }
+  if (act === "today"){ if (state.month===THIS_MONTH) return; state.month = THIS_MONTH; state.cat = null; if (state.mode==="db") subExpenses(); else loadLocal(); materialize(); render(); return; }
+  if (act === "catfilt"){ state.cat = (state.cat === t.dataset.v) ? null : t.dataset.v; render(); return; }
+  if (act === "catclear"){ state.cat = null; render(); return; }
+  if (act === "view"){
+    state.view = t.dataset.v; window.scrollTo(0,0);
+    if (state.view === "year"){ state.year = state.month.slice(0,4); loadYear(state.year); return; }
+    render(); return;
+  }
+  if (act === "filt"){ state.filter = t.dataset.v; state.yearCat = null; render(); return; }
+  if (act === "who"){ state.soloWho = t.dataset.v; render(); return; }
+  if (act === "meis"){
+    readSettingsForm();
+    state.me = t.dataset.v; state.soloWho = t.dataset.v;
+    try{ localStorage.setItem("wk_me", state.me); }catch(e){}
+    state.settings = Object.assign({}, state.settings, { defaultSolo: state.me });
+    guard(putSettings(settingsBody()));
+    t.parentNode.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === t)));
+    render(); return;
+  }
+  if (act === "ynav"){
+    state.year = String(Number(state.year) + Number(t.dataset.v));
+    state.yearCat = null; loadYear(state.year); return;
+  }
+  if (act === "ycat"){
+    const v = t.dataset.v || "";
+    state.yearCat = (v && state.yearCat !== v) ? v : null;
+    window.scrollTo(0,0); render(); return;
+  }
+  if (act === "gomonth"){
+    state.month = t.dataset.v; state.view = "detail"; state.cat = null;
+    if (state.mode === "db") subExpenses(); else loadLocal();
+    materialize(); window.scrollTo(0,0); render(); return;
+  }
+  if (act === "gatego"){
+    const el = $("#g-room"), v = roomClean(el ? el.value : "");
+    if (v.length < 8){
+      if (el){ el.value = v; el.style.borderColor = "var(--danger)"; el.focus(); }
+      const e2 = $(".gate-e");
+      if (e2) e2.textContent = "8文字以上にしてください。";
+      else { const h = document.querySelector(".gate-s");
+             if (h) h.insertAdjacentHTML("afterend", '<p class="gate-e">8文字以上にしてください。</p>'); }
+      return;
+    }
+    try{ localStorage.setItem(ROOM_KEY, v); }catch(e){}
+    t.disabled = true; t.textContent = "つないでいます…";
+    let done = false;
+    const giveup = setTimeout(function(){
+      if (!done) gateHtml("つながりませんでした。通信環境を確かめて、もう一度お試しください。");
+    }, 15000);
+    initFirebase(v).then(function(){
+      done = true; clearTimeout(giveup);
+      $("#gate").hidden = true; document.body.classList.remove("gated");
+    }).catch(function(){
+      done = true; clearTimeout(giveup);
+      gateHtml("つながりませんでした。通信環境を確かめて、もう一度お試しください。");
+    });
+    return;
+  }
+  if (act === "roomout"){
+    try{ localStorage.removeItem(ROOM_KEY); }catch(e){}
+    location.reload(); return;
+  }
+  if (act === "settings"){ settingsSheet(); return; }
+  if (act === "bedit"){ budgetSheet(); return; }
+  if (act === "badd"){
+    readBudgetForm(); state.modal.items.push({ id: uid("b"), name:"", amount:0 }); renderBudgetSheet();
+    setTimeout(function(){
+      const all = document.querySelectorAll('[data-bi="name"]');
+      if (all.length) all[all.length-1].focus();
+    }, 60); return;
+  }
+  if (act === "bdel"){
+    readBudgetForm();
+    state.modal.items = state.modal.items.filter(function(x){ return x.id !== t.dataset.id; });
+    if (!state.modal.items.length) state.modal.items.push({ id: uid("b"), name:"", amount:0 });
+    renderBudgetSheet(); return;
+  }
+  if (act === "bsave"){
+    readBudgetForm(); const d = state.modal;
+    guard(putBudget(d.who, { income: d.income,
+      items: d.items.filter(function(x){ return x.name; }).map(function(x){
+        return { id:x.id, name:x.name, amount:x.amount }; }) }));
+    closeModal(); return;
+  }
+  if (act === "add"){ if (state.readOnly) return; expenseSheet(null); return; }
+  if (act === "edit"){ const e = state.expenses.find(x => x.id === t.dataset.id); if (e) expenseSheet(e); return; }
+  if (act === "close"){ closeModal(); return; }
+  if (act === "scrim"){ if (ev.target === t) closeModal(); return; }
+
+  if (act === "settle"){
+    const c = calc(state.expenses, state.settings.ratioA);
+    guard(putSettlement(state.month, { amount:c.owed, from:c.from, to:c.to, settledAt: todayISO() })); return;
+  }
+  if (act === "unsettle"){ guard(dropSettlement(state.month)); return; }
+  if (act === "clearsample"){
+    state.expenses.filter(e => e.sample).forEach(e => guard(dropExpense(e.id))); return;
+  }
+
+  /* expense sheet */
+  if (act === "pickcat"){     /* the list opens in place, right under the row */
+    readExpenseForm();
+    state.modal.picking = !state.modal.picking;
+    if (!state.modal.picking) state.modal.addingCat = false;
+    expenseSheet(state.modal); return;
+  }
+  if (act === "cat"){ state.modal.category = t.dataset.v; state.modal.picking = false; expenseSheet(state.modal); return; }
+  if (act === "payer"){
+    state.modal.payer = t.dataset.v;
+    t.parentNode.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === t)));
+    updateSay(); return;
+  }
+  if (act === "shared"){
+    readExpenseForm(); state.modal.shared = t.dataset.v === "1";
+    if (!state.modal.shared) state.modal.bearer = null;
+    expenseSheet(state.modal); return;
+  }
+  if (act === "bearer"){
+    state.modal.bearer = t.dataset.v || null;
+    t.parentNode.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === t)));
+    updateSay(); return;
+  }
+  if (act === "newcat"){
+    readExpenseForm(); state.modal.addingCat = true; expenseSheet(state.modal);
+    setTimeout(function(){ const el = $("#f-newcat"); if (el) el.focus(); }, 60); return;
+  }
+  if (act === "savecat"){
+    readExpenseForm();
+    const el = $("#f-newcat"), name = el ? el.value.trim() : "";
+    if (!name || allCats().indexOf(name) >= 0){ if (el){ el.style.borderColor = "var(--danger)"; el.focus(); } return; }
+    addCategory(name);
+    state.modal.category = name; state.modal.addingCat = false; state.modal.picking = false;
+    expenseSheet(state.modal); return;
+  }
+  if (act === "save"){
+    readExpenseForm(); const d = state.modal;
+    if (!d.amount || d.amount <= 0){ const el=$("#f-amt"); if(el){ el.style.borderColor="var(--danger)"; el.focus(); } return; }
+    const rec = { month: d.date.slice(0,7), date: d.date, amount: d.amount, category: d.category,
+                  payer: d.payer, shared: d.shared !== false, note: d.note || "",
+                  bearer: d.shared !== false ? (d.bearer || null) : null,
+                  recurringId: d.recurringId || null, createdAt: d.createdAt || Date.now() };
+    if (d.id) rec.id = d.id;
+    if (d.sample) rec.sample = true;
+    guard(putExpense(rec)); closeModal(); return;
+  }
+  if (act === "delete"){ if (state.modal && state.modal.id) guard(dropExpense(state.modal.id)); closeModal(); return; }
+
+  /* settings sheet */
+  if (act === "xpayer"){ t.parentNode.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === t))); return; }
+  if (act === "addcat"){
+    readSettingsForm();
+    const el = $("#s-newcat"), name = el ? el.value.trim() : "";
+    if (!name || allCats().indexOf(name) >= 0){ if (el){ el.style.borderColor = "var(--danger)"; el.focus(); } return; }
+    addCategory(name); settingsSheet(); return;
+  }
+  if (act === "delcat"){ readSettingsForm(); removeCategory(t.dataset.v); settingsSheet(); return; }
+  if (act === "addfix"){
+    readSettingsForm();
+    const name = $("#x-name").value.trim(), amt = Number(String($("#x-amt").value).replace(/[^0-9.-]/g,"")) || 0;
+    if (!name || amt <= 0){ $("#x-name").style.borderColor = "var(--danger)"; return; }
+    const payerBtn = document.querySelector('[data-act="xpayer"][aria-pressed="true"]');
+    guard(putRecurring({ name: name, amount: amt, category: $("#x-cat").value,
+      payer: payerBtn ? payerBtn.dataset.v : "a", shared: true,
+      day: Math.min(31, Math.max(1, Number($("#x-day").value)||1)),
+      startMonth: state.month, active: true })).then(()=>{ materialized.delete(state.month); setTimeout(settingsSheet, 120); });
+    return;
+  }
+  if (act === "delfix"){ readSettingsForm(); guard(dropRecurring(t.dataset.id)).then(()=> setTimeout(settingsSheet,120)); return; }
+  if (act === "savesettings"){ readSettingsForm(); guard(putSettings(settingsBody())); closeModal(); return; }
+});
+
+document.addEventListener("input", function(ev){
+  if (ev.target.id === "f-amt" && state.modal){ readExpenseForm(); updateSay(); }
+  if (ev.target.id === "s-ratio"){ const v = Number(ev.target.value); const el = $("#s-rv"); if (el) el.textContent = v + " : " + (100 - v); }
+  if (ev.target.id === "s-a" || ev.target.id === "s-b"){
+    const k = ev.target.id === "s-a" ? "a" : "b";
+    const v = ev.target.value.trim() || (k === "a" ? DEFAULTS.nameA : DEFAULTS.nameB);
+    document.querySelectorAll('[data-v="'+k+'"] .nm').forEach(function(el){ el.textContent = v; });
+    if (k === "a") document.querySelectorAll(".nm-a").forEach(function(el){ el.textContent = v; });
+  }
+});
+document.addEventListener("keydown", function(ev){ if (ev.key === "Escape" && !$("#modal").hidden) closeModal(); });
+
+render();
+initStore();
+})();
+</script>
+
+<!--SKEL-->
+</body>
+</html>
+<!--/SKEL-->
