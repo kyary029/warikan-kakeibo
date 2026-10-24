@@ -373,6 +373,7 @@ body.gated .hdr,body.gated .tabbar,body.gated .fab,body.gated #main{display:none
 .empty-s{font-size:14px;line-height:1.75}
 .notice{display:flex;align-items:center;gap:10px;background:var(--accent-soft);border:1px solid transparent;border-radius:var(--r);padding:11px 15px;font-size:13.5px;color:var(--accent)}
 .notice b{font-weight:700}
+.notice.err{background:color-mix(in srgb, var(--danger) 13%, var(--surface));color:var(--danger)}
 .notice button{margin-left:auto;flex:none;border:1px solid currentColor;background:transparent;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700}
 .skel{height:7px;border-radius:4px;background:var(--line-2);animation:pulse 1.4s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
@@ -603,7 +604,7 @@ const state = {
   month: THIS_MONTH,
   expenses: [], recurring: [], settlements: {}, budgets: {}, prevShared: null, settings: Object.assign({},DEFAULTS),
   ready:false, mode:"local", readOnly:false, modal:null, filter:"shared", me:null, soloWho:null, view:"home", cat:null,
-  year:null, yearExp:null, yearLoading:false, yearCat:null, room:null
+  year:null, yearExp:null, yearLoading:false, yearCat:null, room:null, dbError:null
 };
 /* which of the two is using THIS device — a per-device convenience, never shared */
 try{ state.me = localStorage.getItem("wk_me") || null; }catch(e){}
@@ -857,7 +858,13 @@ function gateHtml(msg){
   document.body.classList.add("gated");
   setTimeout(function(){ const el = $("#g-room"); if (el) el.focus(); }, 80);
 }
-function dbErr(e){ if (e && (e.code === "revoked" || e.code === "not_granted")) state.readOnly = true; render(); }
+function dbErr(e){
+  if (e && (e.code === "revoked" || e.code === "not_granted")) state.readOnly = true;
+  /* つながらない理由を画面に出す（真っ白で止まらないように） */
+  state.dbError = (e && (e.code || e.message)) ? String(e.code || e.message) : "不明なエラー";
+  state.ready = true;
+  render();
+}
 
 function wireDb(){
   db.collection("settings").doc("app").onSnapshot(s => {
@@ -1007,6 +1014,7 @@ function bodyHtml(){
   const shownTotal = sum(shown);
   const out = [];
 
+  if (state.dbError) out.push('<div class="notice err"><b>接続エラー</b>'+esc(state.dbError)+'</div>');
   if (state.readOnly) out.push('<div class="notice"><b>閲覧のみ</b>このリンクでは記録を追加できません。</div>');
   else if (!s.named) out.push('<div class="notice"><b>はじめに</b>ふたりの名前を登録しましょう。<button data-act="settings">名前を入れる</button></div>');
   if (state.expenses.some(e => e.sample))
