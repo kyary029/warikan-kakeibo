@@ -794,14 +794,32 @@ function fbAdapter(fs, M, room){
 }
 
 const FB_VER = "10.12.5";
+/* 読み込み先が詰まることがあるので、2つ用意して先に着いたほうを使う */
+async function loadFbSdk(){
+  const sets = [
+    ["https://www.gstatic.com/firebasejs/"+FB_VER+"/firebase-app.js",
+     "https://www.gstatic.com/firebasejs/"+FB_VER+"/firebase-auth.js",
+     "https://www.gstatic.com/firebasejs/"+FB_VER+"/firebase-firestore.js"],
+    ["https://esm.sh/firebase@"+FB_VER+"/app",
+     "https://esm.sh/firebase@"+FB_VER+"/auth",
+     "https://esm.sh/firebase@"+FB_VER+"/firestore"]
+  ];
+  let last = null;
+  for (const urls of sets){
+    try { return await Promise.all(urls.map(function(u){ return import(u); })); }
+    catch(e){ last = e; }
+  }
+  throw last || new Error("sdk");
+}
+function withTimeout(p, ms, tag){
+  return Promise.race([p, new Promise(function(_, rej){
+    setTimeout(function(){ rej(new Error("timeout:"+tag)); }, ms);
+  })]);
+}
 async function initFirebase(room){
-  const [A, U, F] = await Promise.all([
-    import("https://www.gstatic.com/firebasejs/"+FB_VER+"/firebase-app.js"),
-    import("https://www.gstatic.com/firebasejs/"+FB_VER+"/firebase-auth.js"),
-    import("https://www.gstatic.com/firebasejs/"+FB_VER+"/firebase-firestore.js")
-  ]);
+  const [A, U, F] = await withTimeout(loadFbSdk(), 20000, "sdk");
   const app = A.initializeApp(window.FB_CONFIG);
-  await U.signInAnonymously(U.getAuth(app));
+  await withTimeout(U.signInAnonymously(U.getAuth(app)), 20000, "auth");
   db = fbAdapter(F.getFirestore(app), F, room);
   state.mode = "db"; state.room = room;
   wireDb();
@@ -1624,16 +1642,11 @@ document.addEventListener("click", function(ev){
     }
     try{ localStorage.setItem(ROOM_KEY, v); }catch(e){}
     t.disabled = true; t.textContent = "つないでいます…";
-    let done = false;
-    const giveup = setTimeout(function(){
-      if (!done) gateHtml("つながりませんでした。通信環境を確かめて、もう一度お試しください。");
-    }, 15000);
     initFirebase(v).then(function(){
-      done = true; clearTimeout(giveup);
       $("#gate").hidden = true; document.body.classList.remove("gated");
-    }).catch(function(){
-      done = true; clearTimeout(giveup);
-      gateHtml("つながりませんでした。通信環境を確かめて、もう一度お試しください。");
+    }).catch(function(err){
+      const why = (err && (err.code || err.message)) ? String(err.code || err.message) : "不明";
+      gateHtml("つながりませんでした（" + why + "）");
     });
     return;
   }
