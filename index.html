@@ -460,6 +460,8 @@ body.gated .hdr,body.gated .tabbar,body.gated .fab,body.gated #main{display:none
 .catpill.custom{font-weight:700;border-color:var(--k)}
 .catpill button{border:0;background:transparent;color:inherit;font-size:11px;padding:0 3px;line-height:1;opacity:.65;border-radius:50%}
 .catpill button:hover{opacity:1}
+.setpage{padding:0 16px 14px}
+.setpage .sheet-h{position:sticky;top:0;background:var(--surface);z-index:2;border-bottom:1px solid var(--line-2)}
 .sheet-f{display:flex;gap:9px;padding-block:5px 0}
 .sheet-f .btn{flex:1;padding:13px}
 .hint{font-size:12.5px;color:var(--fg-2);line-height:1.7}
@@ -485,7 +487,7 @@ hr.sep{border:0;border-top:1px solid var(--line-2);margin:4px 0}
       <button class="mbtn" data-act="next" aria-label="次の月">›</button>
     </nav>
     <button class="today" data-act="today">今月</button>
-    <button class="iconbtn" data-act="settings" aria-label="設定">⚙</button>
+    <button class="iconbtn" data-act="view" data-v="settings" aria-label="設定">⚙</button>
   </div>
 </header>
 
@@ -524,7 +526,7 @@ hr.sep{border:0;border-top:1px solid var(--line-2);margin:4px 0}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="6.2" width="17.6" height="13" rx="3.4"/><path d="M15.4 11.3h5.4v4.1h-5.4a2.05 2.05 0 0 1 0-4.1z"/><path d="M3.6 9.1c.3-1.7 1.3-2.6 3-2.8l8.8-1.1"/></svg>
     <span>やりくり</span>
   </button>
-  <button class="tb" data-act="settings">
+  <button class="tb" data-act="view" data-v="settings" aria-pressed="false">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.4"/><path d="M12 2.6v2.8M12 18.6v2.8M2.6 12h2.8M18.6 12h2.8M5.3 5.3l2 2M16.7 16.7l2 2M18.7 5.3l-2 2M7.3 16.7l-2 2"/></svg>
     <span>設定</span>
   </button>
@@ -1001,9 +1003,11 @@ async function materialize(){
 
 /* ---------- render ---------- */
 const $ = s => document.querySelector(s);
-function render(){
+function render(force){
   $("#mlabel").textContent = ymLabel(state.month);
-  $("#main").innerHTML = state.ready ? bodyHtml() : skeletonHtml();
+  /* 設定ページを開いている間は、入力中の内容が消えないよう勝手に描き直さない */
+  const keep = (state.view === "settings" && !force && document.querySelector("#main .setpage"));
+  if (!keep) $("#main").innerHTML = state.ready ? bodyHtml() : skeletonHtml();
   const tv = state.view === "year" ? "detail" : state.view;
   document.querySelectorAll(".tb[data-v]").forEach(function(b){ b.setAttribute("aria-pressed", String(b.dataset.v === tv)); });
 }
@@ -1026,10 +1030,11 @@ function bodyHtml(){
 
   if (state.dbError) out.push('<div class="notice err"><b>接続エラー</b>'+esc(state.dbError)+'</div>');
   if (state.readOnly) out.push('<div class="notice"><b>閲覧のみ</b>このリンクでは記録を追加できません。</div>');
-  else if (!s.named) out.push('<div class="notice"><b>はじめに</b>ふたりの名前を登録しましょう。<button data-act="settings">名前を入れる</button></div>');
+  else if (!s.named) out.push('<div class="notice"><b>はじめに</b>ふたりの名前を登録しましょう。<button data-act="view" data-v="settings">名前を入れる</button></div>');
   if (state.expenses.some(e => e.sample))
     out.push('<div class="notice"><b>サンプル</b>使い方がわかる例が入っています。<button data-act="clearsample">まとめて削除</button></div>');
 
+  if (state.view === "settings") return settingsPage();
   if (state.view === "budget") return budgetHtml(names, who, c);
   if (state.view === "year") return yearHtml(names, who);
 
@@ -1497,7 +1502,7 @@ function expenseSheet(e){
   setTimeout(()=>{ const el=$("#f-amt"); if(el && isNew) el.focus(); },50);
 }
 
-function settingsSheet(){
+function settingsInner(page){
   const s = state.settings;
   state.modal = { kind:"settings", nameA:s.nameA, nameB:s.nameB, ratioA:Number(s.ratioA)||50, newFix:null };
   const d = state.modal;
@@ -1508,8 +1513,9 @@ function settingsSheet(){
         + '<span class="item-a">'+yen(r.amount)+'</span>'
         + '<button class="btn ghost" data-act="delfix" data-id="'+esc(r.id)+'" style="padding:4px 8px">削除</button></div>').join("")
     : '<p class="hint">まだありません。家賃・通信費・サブスクなど毎月同じ支出を登録しておくと、月が変わるたびに自動で記録に入ります。</p>';
-  openModal(
-    '<div class="sheet-h"><span class="sheet-t">設定</span><button class="iconbtn" data-act="close" aria-label="閉じる">✕</button></div>'
+  return (page
+    ? '<div class="sheet-h"><span class="sheet-t">設定</span></div>'
+    : '<div class="sheet-h"><span class="sheet-t">設定</span><button class="iconbtn" data-act="close" aria-label="閉じる">✕</button></div>')
   + '<div class="fields">'
   + '<div class="f"><span class="f-l">ふたりの名前</span>'
       + '<div class="namerow">'+cat("a")+'<input class="inp" id="s-a" type="text" maxlength="10" value="'+esc(d.nameA)+'" placeholder="あなたの名前"></div>'
@@ -1553,9 +1559,13 @@ function settingsSheet(){
   + '<hr class="sep">'
   + '<p class="hint">このアプリをiPhoneのホーム画面に置くには、Safariで開いて共有ボタン → 「ホーム画面に追加」。アイコンから他のアプリと同じように開けます。</p>'
   + '</div>'
-  + '<div class="sheet-f"><button class="btn pri" data-act="savesettings">保存して閉じる</button></div>'
-  );
+  + '<div class="sheet-f"><button class="btn pri" data-act="savesettings">'+(page?"保存する":"保存して閉じる")+'</button></div>';
 }
+function settingsSheet(){ openModal(settingsInner(false)); }
+/* 設定の中身が変わったときの描き直し（ページならページを、シートならシートを） */
+function settingsRefresh(){ if (state.view === "settings") render(true); else settingsSheet(); }
+/* 設定はタブから1枚のページとして開く（シートだと閉じるボタンが埋もれるため） */
+function settingsPage(){ return '<section class="card setpage">' + settingsInner(true) + '</section>'; }
 
 /* ---------- events ---------- */
 function readExpenseForm(){
@@ -1766,9 +1776,9 @@ document.addEventListener("click", function(ev){
     readSettingsForm();
     const el = $("#s-newcat"), name = el ? el.value.trim() : "";
     if (!name || allCats().indexOf(name) >= 0){ if (el){ el.style.borderColor = "var(--danger)"; el.focus(); } return; }
-    addCategory(name); settingsSheet(); return;
+    addCategory(name); settingsRefresh(); return;
   }
-  if (act === "delcat"){ readSettingsForm(); removeCategory(t.dataset.v); settingsSheet(); return; }
+  if (act === "delcat"){ readSettingsForm(); removeCategory(t.dataset.v); settingsRefresh(); return; }
   if (act === "addfix"){
     readSettingsForm();
     const name = $("#x-name").value.trim(), amt = Number(String($("#x-amt").value).replace(/[^0-9.-]/g,"")) || 0;
@@ -1777,10 +1787,14 @@ document.addEventListener("click", function(ev){
     guard(putRecurring({ name: name, amount: amt, category: $("#x-cat").value,
       payer: payerBtn ? payerBtn.dataset.v : "a", shared: true,
       day: Math.min(31, Math.max(1, Number($("#x-day").value)||1)),
-      startMonth: state.month, active: true })).then(()=>{ materialized.delete(state.month); setTimeout(settingsSheet, 120); });
+      startMonth: state.month, active: true })).then(()=>{ materialized.delete(state.month); setTimeout(settingsRefresh, 120); });
     return;
   }
-  if (act === "delfix"){ readSettingsForm(); guard(dropRecurring(t.dataset.id)).then(()=> setTimeout(settingsSheet,120)); return; }
+  if (act === "delfix"){ readSettingsForm(); guard(dropRecurring(t.dataset.id)).then(()=> setTimeout(settingsRefresh,120)); return; }
+  if (act === "savesettings" && state.view === "settings"){
+    readSettingsForm(); guard(putSettings(settingsBody()));
+    state.view = "home"; window.scrollTo(0,0); render(); return;
+  }
   if (act === "savesettings"){ readSettingsForm(); guard(putSettings(settingsBody())); closeModal(); return; }
 });
 
