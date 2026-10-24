@@ -362,7 +362,9 @@ body.gated .hdr,body.gated .tabbar,body.gated .fab,body.gated #main{display:none
 .gate-e{margin:-8px 0 12px;font-size:12.5px;font-weight:700;color:var(--danger)}
 .gate .inp{text-align:center;font-family:var(--font-num);font-size:17px;letter-spacing:.04em}
 .gate .btn{width:100%;margin-top:11px;padding:13px}
+.gate-stat{margin-top:10px;font-size:12.5px;font-weight:700;color:var(--accent);min-height:18px}
 .gate-h{margin:15px 0 0;font-size:11.5px;line-height:1.8;color:var(--fg-3)}
+.gate-skip{margin-top:12px;border:0;background:transparent;font-size:12px;color:var(--fg-3);text-decoration:underline;padding:4px}
 .gate-h b{color:var(--fg-2)}
 .roombox{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:15px;padding:11px 13px}
 .roombox .num{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:15px;font-weight:700}
@@ -817,13 +819,18 @@ function withTimeout(p, ms, tag){
     setTimeout(function(){ rej(new Error("timeout:"+tag)); }, ms);
   })]);
 }
+function gateSay(t){ const el = $("#g-stat"); if (el) el.textContent = t; }
 async function initFirebase(room){
+  gateSay("① Firebaseを読み込み中…");
   const [A, U, F] = await withTimeout(loadFbSdk(), 20000, "sdk");
+  gateSay("② ログイン中…");
   const app = A.initializeApp(window.FB_CONFIG);
   await withTimeout(U.signInAnonymously(U.getAuth(app)), 20000, "auth");
+  gateSay("③ データにつないでいます…");
   db = fbAdapter(F.getFirestore(app), F, room);
   state.mode = "db"; state.room = room;
   wireDb();
+  gateSay("④ 完了");
 }
 
 async function initStore(){
@@ -851,8 +858,10 @@ function gateHtml(msg){
     + (msg ? '<p class="gate-e">'+esc(msg)+'</p>' : '')
     + '<input class="inp" id="g-room" type="text" inputmode="latin" autocapitalize="none" autocomplete="off" placeholder="warikan-kakeibo-1234" value="'+esc(roomNow())+'">'
     + '<button class="btn pri" data-act="gatego">はじめる</button>'
+    + '<div class="gate-stat" id="g-stat"></div>'
     + '<p class="gate-h">半角の英数字とハイフンで<b>8文字以上</b>。<br>'
     + '他の人に推測されにくい言葉にしてください。<br>この端末では次回から入力はいりません。</p>'
+    + '<button class="gate-skip" data-act="gateskip">つながらないときは、この端末だけで使う</button>'
     + '</div>';
   g.hidden = false;
   document.body.classList.add("gated");
@@ -1657,6 +1666,10 @@ document.addEventListener("click", function(ev){
       gateHtml("つながりませんでした（" + why + "）");
     });
     return;
+  }
+  if (act === "gateskip"){
+    $("#gate").hidden = true; document.body.classList.remove("gated");
+    state.mode = "local"; loadLocal(); state.ready = true; materialize(); render(); return;
   }
   if (act === "roomout"){
     try{ localStorage.removeItem(ROOM_KEY); }catch(e){}
